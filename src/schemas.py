@@ -22,3 +22,9 @@ class Dashboard(BaseModel):
 
 class Answer(BaseModel):
     answer : str
+    
+class Summary(BaseModel):
+    desc : str
+
+class SummaryResponse(BaseModel):
+    summary : str

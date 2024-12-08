@@ -4,8 +4,8 @@ import os
 
 import openai
 from dotenv import load_dotenv
-from openai import OpenAI
 from sqlalchemy.orm import Session
+from openai import OpenAI
 
 from . import exceptions, models, utils
 
@@ -78,3 +78,4 @@ def open_ai_query_with_agent(query: str):
     )
 
     return completion.choices[0].message
+

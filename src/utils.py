@@ -5,8 +5,9 @@ from datetime import datetime, timedelta
 
 import openai
 from dotenv import load_dotenv
-from jose import jwt
+
 from passlib.context import CryptContext
+import jwt
 
 from .config import ALGORITHM, SECRET_KEY
 
@@ -58,17 +59,18 @@ def add_context_from_menu(choice):
         return "Invalid choice. Please try again."
 
 def summarize_request(request_text):
-    import openai
-
-    openai.api_key = "your-api-key"
-
-    response = openai.ChatCompletion.create(
+    res = openai.chat.completions.create(
         model="gpt-4",
         messages=[
-            {"role": "system", "content": "You are an assistant that summarizes text into a concise description."},
-            {"role": "user", "content": f"Summarize the following request: {request_text}"}
-        ]
+            {
+                "role": "system",
+                "content": "You are an assistant that summarizes text into a concise description of less than 25 words.",
+            },
+            {"role": "user", "content": f"Summarize the following request: {request_text}"},
+        ],
     )
-    summary = response.choices[0].message["content"].strip()
-    print(f"Summary: {summary}")
-    return summary
+    summary_text = res.choices[0].message.content
+    print(f"Summary: {res.choices[0].message.content}")
+    print(res.choices[0].message.content)
+    
+    return {"summary": summary_text}
