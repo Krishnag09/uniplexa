@@ -5,3 +5,4 @@ src/.ruff_cache/
 src/venv/
 venv/
 .vscode/
+*.pyc
