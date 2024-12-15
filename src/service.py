@@ -75,6 +75,7 @@ def open_ai_query_with_agent(query: str):
                 "content": query
             }
         ]
+        
     )
 
     return completion.choices[0].message

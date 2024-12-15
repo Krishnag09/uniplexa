@@ -1,6 +1,7 @@
 # src/auth/schemas.py
 
 from pydantic import BaseModel
+import date 
 
 
 class UserCreate(BaseModel):
@@ -16,3 +17,9 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class ServiceRequest(BaseModel):
+    desc: str
+    title: str
+    date : str
+    

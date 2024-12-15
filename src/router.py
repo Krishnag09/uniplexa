@@ -31,6 +31,9 @@ def open_ai_query():
     response = service.open_ai_query()
     return {"answer": response}
 
-@router.post("/agent/summary",response_model=schemas.SummaryResponse, description="Summarize a text")
+@router.post("/agent/summary",response_model=schemas.SummaryResponse, description="details form the issue description")
 def summary(request: schemas.Summary, db: Session = Depends(database.get_db)):
-    return utils.summarize_request(request.desc)
+    request_summary = utils.summarize_request(request.desc)
+    request_category = utils.detect_category(request.desc)
+    request_date_time = utils.get_date_time()
+    return {"request_summary": request_summary, "request_category": request_category, "request_date": request_date_time["date"], "request_time": request_date_time["time"]}

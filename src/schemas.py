@@ -1,6 +1,8 @@
 # src/auth/schemas.py
 
 from pydantic import BaseModel
+from datetime import date, time
+
 
 
 class UserCreate(BaseModel):
@@ -27,4 +29,7 @@ class Summary(BaseModel):
     desc : str
 
 class SummaryResponse(BaseModel):
-    summary : str
+    request_summary : str
+    request_category : str
+    request_date : date
+    request_time : time

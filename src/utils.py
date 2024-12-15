@@ -73,4 +73,24 @@ def summarize_request(request_text):
     print(f"Summary: {res.choices[0].message.content}")
     print(res.choices[0].message.content)
     
-    return {"summary": summary_text}
+    return summary_text
+
+def detect_category(request_text):
+    res = openai.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an assistant that categorizes text into one of the following categories: service request, amenity booking, document access, policy lookup.",
+            },
+            {"role": "user", "content": f"Detect the category of the following request: {request_text}"},
+        ],
+    )
+    category = res.choices[0].message.content
+    print(f"Category: {res.choices[0].message.content}")
+    return category
+
+def get_date_time():
+    date = datetime.now().strftime("%Y-%m-%d")
+    time = datetime.now().strftime("%H:%M:%S")
+    return {"date": date, "time": time}
