@@ -11,6 +11,8 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+# Create all tables defined in the models
+Base.metadata.create_all(bind=engine)
 
 # Dependency for getting the database session
 

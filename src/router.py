@@ -4,7 +4,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from . import database, schemas, service, utils
+from . import database, schemas, service, utils, models
 
 router = APIRouter()
 
@@ -31,9 +31,21 @@ def open_ai_query():
     response = service.open_ai_query()
     return {"answer": response}
 
-@router.post("/agent/summary",response_model=schemas.SummaryResponse, description="details form the issue description")
+@router.post("/agent/summary",response_model=schemas.ServiceRequest, description="details form the issue description")
 def summary(request: schemas.Summary, db: Session = Depends(database.get_db)):
-    request_summary = utils.summarize_request(request.desc)
+    request_desc = request.desc
+    request_title = utils.summarize_request(request.desc)
     request_category = utils.detect_category(request.desc)
     request_date_time = utils.get_date_time()
-    return {"request_summary": request_summary, "request_category": request_category, "request_date": request_date_time["date"], "request_time": request_date_time["time"]}
+    request_status = schemas.RequestStatus.pending
+    
+    request = schemas.ServiceRequest(request_title=request_title , request_desc=request_desc, request_category=request_category,request_date=request_date_time["date"], request_time=request_date_time["time"], request_status=request_status)
+    
+    request_model = models.ServiceRequestModel(desc=request_desc, title=request_title, request_date=request_date_time["date"], request_time=request_date_time["time"], request_status=request_status)
+    
+    db.add(request_model)
+    request_model_id = db.commit()
+    db.commit()
+    db.refresh(request_model)
+    print(f"Request ID: {request_model_id}")
+    return{"request_id": request_model_id, "request_title": request_title, "request_desc": request_desc, "request_category": request_category, "request_date": request_date_time["date"], "request_time": request_date_time["time"], "request_status": request_status}

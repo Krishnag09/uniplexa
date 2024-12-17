@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel
 from datetime import date, time
+from .enums import RequestStatus
 
 
 
@@ -28,8 +29,10 @@ class Answer(BaseModel):
 class Summary(BaseModel):
     desc : str
 
-class SummaryResponse(BaseModel):
-    request_summary : str
+class ServiceRequest(BaseModel):
+    request_desc : str
+    request_title : str
     request_category : str
     request_date : date
     request_time : time
+    request_status : RequestStatus

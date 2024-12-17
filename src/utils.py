@@ -91,6 +91,7 @@ def detect_category(request_text):
     return category
 
 def get_date_time():
-    date = datetime.now().strftime("%Y-%m-%d")
-    time = datetime.now().strftime("%H:%M:%S")
-    return {"date": date, "time": time}
+    now = datetime.now()
+    current_date = now.date()  # Returns a `date` object
+    current_time = now.time()  # Returns a `time` object
+    return {"date": current_date, "time": current_time}

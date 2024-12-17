@@ -16,14 +16,6 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI()
 
 
-# proxies = {
-#     "http": "http://your-proxy-url:port",
-#     "https": "http://your-proxy-url:port",
-# }
-
-# # Configure the requests library for proxy
-# openai.proxy = proxies  # Set globally for the `openai` library
-
 def create_user(db: Session, email: str, password: str):
     user = db.query(models.User).filter(models.User.email == email).first()
     if user:
