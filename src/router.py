@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from . import database, schemas, service, utils, models
 
+from fastapi import HTTPException
+
 router = APIRouter()
 
 @router.get("/")
@@ -31,8 +33,8 @@ def open_ai_query():
     response = service.open_ai_query()
     return {"answer": response}
 
-@router.post("/agent/summary",response_model=schemas.ServiceRequest, description="details form the issue description")
-def summary(request: schemas.Summary, db: Session = Depends(database.get_db)):
+@router.post("/service-request",response_model=schemas.ServiceRequest, description="details form the issue description")
+def create_request(request: schemas.Summary, db: Session = Depends(database.get_db)):
     request_desc = request.desc
     request_title = utils.summarize_request(request.desc)
     request_category = utils.detect_category(request.desc)
@@ -49,3 +51,54 @@ def summary(request: schemas.Summary, db: Session = Depends(database.get_db)):
     db.refresh(request_model)
     print(f"Request ID: {request_model_id}")
     return{"request_id": request_model_id, "request_title": request_title, "request_desc": request_desc, "request_category": request_category, "request_date": request_date_time["date"], "request_time": request_date_time["time"], "request_status": request_status}
+
+@router.get("/service-request", response_model=schemas.ServiceRequest, description="returns request details for the request id")
+def get_request(request_id: int, db: Session = Depends(database.get_db)):
+    request = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return request
+
+@router.delete("/service-request", response_model=schemas.ServiceRequest, description="deletes the request for the request id")
+def delete_request(request_id: int, db: Session = Depends(database.get_db)):
+    request = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    db.delete(request)
+    db.commit()
+    return request
+
+@router.get("/service-request/all", response_model=schemas.ServiceRequest, description="returns all the requests") # add filtering for status, user, building, etc.
+def get_all_requests(db: Session = Depends(database.get_db)):
+    requests = db.query(models.ServiceRequestModel).all()
+    return requests
+
+
+
+@router.patch("/service-requests/{request_id}", response_model=schemas.ServiceRequestPatch)
+def patch_service_request(
+    request_id: int,
+    request_data: schemas.ServiceRequestPatch,
+    db: Session = Depends(database.get_db),
+):
+    # Fetch the existing service request
+    db_request = db.query(models.ServiceRequestModel).filter(
+        models.ServiceRequestModel.request_id == request_id
+    ).first()
+    if not db_request:
+        raise HTTPException(status_code=404, detail="Service request not found")
+
+    # Update only the fields provided in the request_data
+    update_data = request_data.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_request, key, value)  # Dynamically update attributes
+
+    db.commit()
+    db.refresh(db_request)  # Refresh the instance with the updated database data
+    return schemas.ServiceRequestPatch(
+        request_desc=db_request.request_desc,
+        request_title=db_request.request_title,
+        request_date=db_request.request_date,
+        request_time=db_request.request_time,
+        request_status=db_request.request_status,
+    )

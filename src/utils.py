@@ -35,7 +35,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 
 
 def display_menu():
-    print("\nWhat would you like to do?")
+    print("\n What would you like to do?")
     print("1. Log a service request")
     print("2. Check the status of a service request")
     print("3. Book an amenity")

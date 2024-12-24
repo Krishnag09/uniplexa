@@ -3,7 +3,7 @@
 from pydantic import BaseModel
 from datetime import date, time
 from .enums import RequestStatus
-
+from pydantic.types import Optional
 
 
 class UserCreate(BaseModel):
@@ -36,3 +36,14 @@ class ServiceRequest(BaseModel):
     request_date : date
     request_time : time
     request_status : RequestStatus
+    
+
+class ServiceRequestPatch(BaseModel):
+    request_desc: Optional[str]
+    request_title: Optional[str]
+    request_date: Optional[date]
+    request_time: Optional[time]
+    request_status: Optional[RequestStatus]  # Use RequestStatus enum
+
+    class Config:
+        orm_mode = True
