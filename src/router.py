@@ -4,7 +4,9 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from . import database, schemas, service, utils, models
+from .services import service_request as service
+from . import database, schemas, utils, models
+from .services import voice_test as voice_service
 
 from fastapi import HTTPException
 
@@ -102,3 +104,9 @@ def patch_service_request(
         request_time=db_request.request_time,
         request_status=db_request.request_status,
     )
+    
+@router.get("/voice")
+def consume_voice_api():
+    response = voice_service.consume_voice_api()
+    print(f"Voice Response: {response}")
+    return response
