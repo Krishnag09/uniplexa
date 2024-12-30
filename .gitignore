@@ -6,3 +6,5 @@ src/venv/
 venv/
 .vscode/
 *.pyc
+*.dstore
+*.DS_Store

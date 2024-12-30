@@ -106,6 +106,13 @@ def patch_service_request(
     )
     
 @router.get("/voice")
+def consume_voice_api_local():
+    response = voice_service.consume_audio_api_local()
+    print(f"Voice Response: {response}")
+    return response
+
+
+@router.get("/voice-api")
 def consume_voice_api():
     response = voice_service.consume_voice_api()
     print(f"Voice Response: {response}")
