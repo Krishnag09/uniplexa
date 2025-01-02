@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import base64
 import requests
-import json
+from src.utils.utils import  detect_category , get_date_time, summarize_request
 
 load_dotenv()
 
@@ -52,8 +52,28 @@ def consume_audio_api_local():
         )
         
         message = completion.choices[0].message.audio.transcript
-        return message
-    
+        retry_count = 0
+
+        try:
+            title = summarize_request(message)
+            category = detect_category(message)
+            date_time = get_date_time()
+            date = date_time["date"]
+            time = date_time["time"]
+            return {"request_title": title, "request_category": category, "request_date": date, "request_time": time, "request_desc": message}
+        except Exception as e:
+            print(e)
+            if retry_count < 3:
+                retry_count += 1
+                return consume_audio_api_local()
+            else:
+                return {
+                    "retry": "false",
+                    "error_code": "PROCESSING_ERROR",
+                    "error_message": "An error occurred while processing your request. Please try again later."
+                }
+
+        # front end to have retry message and button
 
 def consume_voice_api():
     

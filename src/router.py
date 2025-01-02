@@ -4,8 +4,9 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from . import utils
 from .services import service_request as service
-from . import database, schemas, utils, models
+from . import database, schemas, models
 from .services import voice_test as voice_service
 
 from fastapi import HTTPException
@@ -74,7 +75,6 @@ def delete_request(request_id: int, db: Session = Depends(database.get_db)):
 def get_all_requests(db: Session = Depends(database.get_db)):
     requests = db.query(models.ServiceRequestModel).all()
     return requests
-
 
 
 @router.patch("/service-requests/{request_id}", response_model=schemas.ServiceRequestPatch)

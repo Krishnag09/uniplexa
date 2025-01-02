@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from passlib.context import CryptContext
 import jwt
 
-from .config import ALGORITHM, SECRET_KEY
+from ..config import ALGORITHM, SECRET_KEY
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")

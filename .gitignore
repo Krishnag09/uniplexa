@@ -8,3 +8,4 @@ venv/
 *.pyc
 *.dstore
 *.DS_Store
+*.log
