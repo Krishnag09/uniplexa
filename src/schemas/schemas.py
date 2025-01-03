@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 from datetime import date, time
-from .enums import RequestStatus
+from ..models.enums import RequestStatus
 from pydantic.types import Optional
 
 

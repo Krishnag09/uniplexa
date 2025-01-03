@@ -94,4 +94,5 @@ def get_date_time():
     now = datetime.now()
     current_date = now.date()  # Returns a `date` object
     current_time = now.time()  # Returns a `time` object
+    current_time = current_time.strftime("%H:%M:%S")
     return {"date": current_date, "time": current_time}

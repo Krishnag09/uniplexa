@@ -1,11 +1,10 @@
 # src/main.py
 
 from fastapi import FastAPI
-from src.router import router as auth_router
-from src.router import router as router
 from contextlib import asynccontextmanager
 import logging
-from src.database import Base, engine
+from src.common.database import Base, engine
+from src.routers.router import router
 
 
 def create_tables():
@@ -28,6 +27,5 @@ async def lifespan(app: FastAPI):
     
     
 # Include the auth router
-app.include_router(auth_router, prefix="/auth")
 app.include_router(router)
 
