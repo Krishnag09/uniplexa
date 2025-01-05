@@ -4,10 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from ..models.models import Base
 
-from ..config import DATABASE_URL
+from ..config.config import config
 
 # Create engine and session
-engine = create_engine(DATABASE_URL)
+engine = create_engine(config.get("DATABASE_URL"))
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Create all tables defined in the models

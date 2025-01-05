@@ -6,6 +6,7 @@ from openai import OpenAI
 import base64
 import requests
 from src.utils.utils import  detect_category , get_date_time, summarize_request
+from ..config.config import config
 
 load_dotenv()
 
@@ -13,20 +14,17 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI()
 
-url = "https://openaiassets.blob.core.windows.net/$web/API/docs/audio/alloy.wav"
-response = requests.get(url)
-response.raise_for_status()
-wav_data = response.content
-encoded_string = base64.b64encode(wav_data).decode('utf-8')
 
-path = "/Users/krishnagaurav/uniplexa/app/src/audio/LG-turbowash-audio.mp3"
 
-def consume_local_audio(path):
-    encoded__audio = base64.b64encode(open(path, "rb").read()).decode('utf-8')
+AUDIO_DIR = os.path.join(config.base_dir, "audio")
+audio_path = os.path.join(AUDIO_DIR, "LG-turbowash-audio.mp3")
+
+
+def consume_local_audio(audio_path):
+    encoded__audio = base64.b64encode(open(audio_path, "rb").read()).decode('utf-8')
     return encoded__audio
 
 def consume_audio_api_local():
-        
         completion = client.chat.completions.create(
             model="gpt-4o-audio-preview",
             modalities=["text", "audio"],
@@ -42,7 +40,7 @@ def consume_audio_api_local():
                         {
                             "type": "input_audio",
                             "input_audio": {
-                                "data": consume_local_audio(path),
+                                "data": consume_local_audio(audio_path),
                                 "format": "mp3"
                             }
                         }
@@ -73,35 +71,5 @@ def consume_audio_api_local():
                     "error_message": "An error occurred while processing your request. Please try again later."
                 }
 
-        # front end to have retry message and button
 
-def consume_voice_api():
-    
-    completion = client.chat.completions.create(
-        model="gpt-4o-audio-preview",
-        modalities=["text", "audio"],
-        audio={"voice": "alloy", "format": "wav"},
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    { 
-                        "type": "text",
-                        "text": "What is in this recording?"
-                    },
-                    {
-                        "type": "input_audio",
-                        "input_audio": {
-                            "data": encoded_string,
-                            "format": "wav"
-                        }
-                    }
-                ]
-            },
-        ]
-    )
-    
-    message2 = completion.choices[0].message.audio.transcript
-
-    return message2
 

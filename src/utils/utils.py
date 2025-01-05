@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from passlib.context import CryptContext
 import jwt
 
-from ..config import ALGORITHM, SECRET_KEY
+from ..config.config import config
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -31,7 +31,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, config.get("SECRET_KEY"), algorithm=config.get("ALGORITHM"))
 
 
 def display_menu():
