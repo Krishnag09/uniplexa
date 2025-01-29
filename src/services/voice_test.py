@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import base64
 import requests
-from src.utils.utils import  detect_category , get_date_time, summarize_request
-from ..config.config import config
+from utils.utils import  detect_category , get_date_time, summarize_request
+from config.config import config
 
 load_dotenv()
 

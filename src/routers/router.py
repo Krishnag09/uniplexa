@@ -4,14 +4,14 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from ..schemas import schemas
+from schemas import schemas
 
-from ..models import models
+from models import models
 
-from .. import utils
-from ..services import service_request as service
-from ..common import database
-from ..services import voice_test as voice_service
+import utils
+from services import service_request as service
+from common import database
+from services import voice_test as voice_service
 
 from fastapi import HTTPException
 

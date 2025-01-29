@@ -3,9 +3,11 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import logging
-from src.common.database import Base, engine
-from src.routers.router import router
-from src.config.config import config  # Import config system
+from common.database import Base, engine
+from routers.router import router
+from config.config import config  # Import config system
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 
 
@@ -22,6 +24,14 @@ DATABASE_URL = config.get("DATABASE_URL")
 BASE_DIR = config.base_dir
 
 app = FastAPI()
+
+# Serve React's static files (CSS, JS, etc.)
+app.mount("/static", StaticFiles(directory="static/build/static"), name="static")
+
+# Serve React's index.html at the root
+@app.get("/")
+def serve_react():
+    return FileResponse("static/build/index.html")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

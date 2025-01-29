@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from openai import OpenAI
 
-from ..models import models
-from ..utils import utils
-from ..common import exceptions
+from models import models
+from utils import utils
+from common import exceptions
 
 load_dotenv()
 
