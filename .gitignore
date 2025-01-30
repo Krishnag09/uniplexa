@@ -9,3 +9,4 @@ venv/
 *.dstore
 *.DS_Store
 *.log
+test.db
