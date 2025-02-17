@@ -11,20 +11,26 @@ from models import models
 import utils
 from services import service_request as service
 from common import database
-from services import voice_test as voice_service
+from services import voice_methods as voice_service
+import os
+from config.config import config
+
 
 from fastapi import HTTPException
 
+# this is static for testing purposes.
+AUDIO_DIR = os.path.join(config.base_dir, "audio")
+audio_path = os.path.join(AUDIO_DIR, "LG-turbowash-audio.mp3")
+
 router = APIRouter()
 
-@router.get("/")
+@router.get("/hello")
 def read_root():
-    return {"Hello": "World"}
+    return {"name": "Krish"}
 
 @router.post("/register", response_model=schemas.UserCreate)
 def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     return service.create_user(db, email=user.email, password=user.password)
-
 
 @router.post("/login", response_model=schemas.Token)
 def login(user: schemas.UserLogin, db: Session = Depends(database.get_db)):
@@ -65,6 +71,14 @@ def get_request(request_id: int, db: Session = Depends(database.get_db)):
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
     return request
+
+@router.get("/service-request/status", response_model=schemas.ServiceRequest, description="returns request status for the request id")
+def get_request_status(request_id: int, db: Session = Depends(database.get_db)):
+    request = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return request.request_status
+
 
 @router.delete("/service-request", response_model=schemas.ServiceRequest, description="deletes the request for the request id")
 def delete_request(request_id: int, db: Session = Depends(database.get_db)):
@@ -108,16 +122,12 @@ def patch_service_request(
         request_time=db_request.request_time,
         request_status=db_request.request_status,
     )
-    
-@router.get("/voice")
-def consume_voice_api_local():
-    response = voice_service.consume_audio_api_local()
-    print(f"Voice Response: {response}")
-    return response
 
 
-@router.get("/voice-api")
+@router.get("/voice-summary", response_model=schemas.ServiceRequest, description="returns request details for input voice")
 def consume_voice_api():
-    response = voice_service.consume_voice_api()
-    print(f"Voice Response: {response}")
-    return response
+    audio_path = os.path.join(AUDIO_DIR, "LG-turbowash-audio.mp3")
+    voice_to_text = voice_service.audio_to_text(audio_path)
+    print(f"Voice to Text: {voice_to_text}")
+    request_details = voice_service.summarize_message(voice_to_text)
+    return request_details

@@ -1,13 +1,14 @@
 # src/auth/utils.py
 
 import os
+import jwt
+
 from datetime import datetime, timedelta
 
 import openai
 from dotenv import load_dotenv
 
 from passlib.context import CryptContext
-import jwt
 
 from config.config import config
 

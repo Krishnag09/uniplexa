@@ -3,7 +3,7 @@
 from pydantic import BaseModel
 from datetime import date, time
 from models.enums import RequestStatus
-from pydantic.types import Optional
+from typing import Optional
 
 
 class UserCreate(BaseModel):

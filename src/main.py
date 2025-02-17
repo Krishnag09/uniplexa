@@ -8,6 +8,7 @@ from routers.router import router
 from config.config import config  # Import config system
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
@@ -24,6 +25,14 @@ DATABASE_URL = config.get("DATABASE_URL")
 BASE_DIR = config.base_dir
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (Replace with your frontend URL in production)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Serve React's static files (CSS, JS, etc.)
 app.mount("/static", StaticFiles(directory="static/build/static"), name="static")
