@@ -53,29 +53,26 @@ def audio_to_text(audio_path):
         message = completion.choices[0].message.audio.transcript
         return message
 
-\
+
 
 def summarize_message(text):
     retry_count = 0
-
     try:
         title = summarize_request(text)
         category = detect_category(text)
         date_time = get_date_time()
         date = date_time["date"]
         time = date_time["time"]
-        return {"request_title": title, "request_category": category, "request_date": date, "request_time": time, "request_desc": text}
+        return {"request_title": title, "request_category": category, "request_date": date, "request_time": time, "request_desc": text, "request_status": "pending"}
     except Exception as e:
         print(e)
         if retry_count < 3:
             retry_count += 1
-            return consume_audio_api_local()
+            return consume_local_audio()
         else:
             return {
                 "retry": "false",
                 "error_code": "PROCESSING_ERROR",
                 "error_message": "An error occurred while processing your request. Please try again later."
             }
-
-
 

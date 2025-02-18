@@ -47,3 +47,6 @@ class ServiceRequestPatch(BaseModel):
 
     class Config:
         orm_mode = True
+
+class AudioRequest(BaseModel):
+    audio_path : str

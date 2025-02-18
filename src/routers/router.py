@@ -1,4 +1,3 @@
-
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends
@@ -73,25 +72,25 @@ def get_request(request_id: int, db: Session = Depends(database.get_db)):
     return request
 
 @router.get("/service-request/status", response_model=schemas.ServiceRequest, description="returns request status for the request id")
-def get_request_status(request_id: int, db: Session = Depends(database.get_db)):
-    request = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
+async def get_request_status(request_id: int, db: Session = Depends(database.get_db)):
+    request = await db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
     return request.request_status
 
 
 @router.delete("/service-request", response_model=schemas.ServiceRequest, description="deletes the request for the request id")
-def delete_request(request_id: int, db: Session = Depends(database.get_db)):
-    request = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
+async def delete_request(request_id: int, db: Session = Depends(database.get_db)):
+    request = await db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
-    db.delete(request)
-    db.commit()
+    await db.delete(request)
+    await db.commit()
     return request
 
 @router.get("/service-request/all", response_model=schemas.ServiceRequest, description="returns all the requests") # add filtering for status, user, building, etc.
-def get_all_requests(db: Session = Depends(database.get_db)):
-    requests = db.query(models.ServiceRequestModel).all()
+async def get_all_requests(db: Session = Depends(database.get_db)):
+    requests = await db.query(models.ServiceRequestModel).all()
     return requests
 
 
@@ -125,9 +124,11 @@ def patch_service_request(
 
 
 @router.get("/voice-summary", response_model=schemas.ServiceRequest, description="returns request details for input voice")
-def consume_voice_api():
+async def consume_voice_api():
     audio_path = os.path.join(AUDIO_DIR, "LG-turbowash-audio.mp3")
     voice_to_text = voice_service.audio_to_text(audio_path)
     print(f"Voice to Text: {voice_to_text}")
     request_details = voice_service.summarize_message(voice_to_text)
-    return request_details
+    return schemas.ServiceRequest(
+        request_title=request_details["request_title"], request_desc=request_details["request_desc"], request_category=request_details["request_category"], request_date=request_details["request_date"], request_time=request_details["request_time"], request_status=request_details["request_status"]
+        )
