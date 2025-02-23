@@ -132,3 +132,4 @@ async def consume_voice_api():
     return schemas.ServiceRequest(
         request_title=request_details["request_title"], request_desc=request_details["request_desc"], request_category=request_details["request_category"], request_date=request_details["request_date"], request_time=request_details["request_time"], request_status=request_details["request_status"]
         )
+    

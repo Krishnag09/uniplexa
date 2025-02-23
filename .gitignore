@@ -22,15 +22,15 @@ test.db
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-app_frontend/node_modules
-app_frontend/.pnp
-app_frontend/.pnp.js
+app/node_modules
+app/.pnp
+app/.pnp.js
 
 # testing
-app_frontend/coverage
+app/coverage
 
 # production
-app_frontend/build
+app/build
 
 # misc
 .DS_Store

@@ -1,11 +1,14 @@
 import os
-
 import openai
 from dotenv import load_dotenv
 from openai import OpenAI
 import base64
 from utils.utils import  detect_category , get_date_time, summarize_request
 from config.config import config
+import speech_recognition as sr
+from fastapi import WebSocket
+import io
+
 
 load_dotenv()
 
@@ -76,3 +79,29 @@ def summarize_message(text):
                 "error_message": "An error occurred while processing your request. Please try again later."
             }
 
+async def websocket_audio(websocket: WebSocket):
+    """
+    Receives streaming audio from a mobile app via WebSockets and transcribes it in real time.
+    """
+    await websocket.accept()  # Accept WebSocket connection
+    recognizer = sr.Recognizer()
+
+    while True:
+        try:
+            # Receive raw audio data as bytes
+            audio_chunk = await websocket.receive_bytes()
+
+            # Convert bytes into an in-memory audio file
+            audio_file = io.BytesIO(audio_chunk)
+
+            with sr.AudioFile(audio_file) as source:
+                audio = recognizer.record(source)  # Process the chunk
+
+            # Convert speech to text
+            transcript = audio_to_text(audio)
+
+            # Send the transcript back to the mobile app
+            await websocket.send_text(transcript)
+
+        except Exception as e:
+            await websocket.send_text(f"Error: {str(e)}")
