@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, WebSocket
 from sqlalchemy.orm import Session
 
 from schemas import schemas
@@ -13,7 +13,6 @@ from common import database
 from services import voice_methods as voice_service
 import os
 from config.config import config
-
 
 # this is static for testing purposes.
 AUDIO_DIR = os.path.join(config.base_dir, "audio")
@@ -164,3 +163,11 @@ async def consume_voice_api():
     return schemas.ServiceRequest(
         request_title=request_details["request_title"], request_desc=request_details["request_desc"], request_category=request_details["request_category"], request_date=request_details["request_date"], request_time=request_details["request_time"], request_status=request_details["request_status"]
         )
+
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        print(f"Received: {data}")
+        await websocket.send_text(f"Echo: {data}")
