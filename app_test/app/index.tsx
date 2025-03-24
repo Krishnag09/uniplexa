@@ -10,14 +10,16 @@ import {
 import { Ionicons } from "@expo/vector-icons"; // For mic icon
 import { Audio } from "expo-av";
 
-const WEBSOCKET_URL = "ws://192.168.1.154:8000/ws"; // Replace with your WebSocket server URL
+const WEBSOCKET_URL = "ws://192.168.1.73:8000/ws"; // Replace with your WebSocket server URL
 
 const WebSocketComponent = () => {
   const [isMicActive, setIsMicActive] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState("Disconnected");
-  const [silenceTimer, setSilenceTimer] = useState(null);
+  const [silenceTimer, setSilenceTimer] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const ws = useRef<WebSocket | null>(null);
-  const recording = useRef(null);
+  const recording = useRef<Audio.Recording | null>(null);
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -33,7 +35,7 @@ const WebSocketComponent = () => {
     };
 
     ws.current.onerror = (e) => {
-      console.error("WebSocket error:", e.message);
+      console.error("WebSocket error:", e);
       setConnectionStatus("Error");
       Alert.alert(
         "WebSocket error",
@@ -55,7 +57,6 @@ const WebSocketComponent = () => {
     await Audio.requestPermissionsAsync();
     await Audio.setAudioModeAsync({
       allowsRecordingIOS: true,
-      allowsMetering: true,
     });
 
     const { recording: rec } = await Audio.Recording.createAsync(
@@ -63,8 +64,7 @@ const WebSocketComponent = () => {
     );
 
     rec.setOnRecordingStatusUpdate((status) => {
-      if (!status.canMeasureSilence) return;
-      const rms = status.metering;
+      const rms = status.metering || -160; // Default to a very low value if metering is undefined
       if (rms < -50) {
         if (!silenceTimer) {
           const timer = setTimeout(() => autoStopMic(), 1500);

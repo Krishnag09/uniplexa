@@ -22,9 +22,17 @@ AUDIO_DIR = os.path.join(config.base_dir, "audio")
 audio_path = os.path.join(AUDIO_DIR, "LG-turbowash-audio.mp3")
 
 # currently consuming audio from local file
-def consume_local_audio(audio_path):
-    encoded__audio = base64.b64encode(open(audio_path, "rb").read()).decode('utf-8')
-    return encoded__audio
+
+def consume_local_audio(audio_data, output_path="temp_audio.wav"):
+    # Save the AudioData object to a WAV file
+    with open(output_path, "wb") as f:
+        f.write(audio_data.get_wav_data())  # Extract raw WAV data from AudioData
+
+    # Encode the saved WAV file in Base64
+    with open(output_path, "rb") as f:
+        encoded_audio = base64.b64encode(f.read()).decode("utf-8")
+
+    return encoded_audio
 
 # acts as the main function for the audio to text conversion
 
@@ -45,7 +53,7 @@ def audio_to_text(audio_path):
                             "type": "input_audio",
                             "input_audio": {
                                 "data": consume_local_audio(audio_path),
-                                "format": "mp3"
+                                "format": "wav"
                             }
                         }
                     ]

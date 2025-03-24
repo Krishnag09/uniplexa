@@ -13,6 +13,12 @@ from common import database
 from services import voice_methods as voice_service
 import os
 from config.config import config
+import speech_recognition as sr
+from services import voice_methods
+from io import BytesIO
+
+
+
 
 # this is static for testing purposes.
 AUDIO_DIR = os.path.join(config.base_dir, "audio")
@@ -163,11 +169,38 @@ async def consume_voice_api():
     return schemas.ServiceRequest(
         request_title=request_details["request_title"], request_desc=request_details["request_desc"], request_category=request_details["request_category"], request_date=request_details["request_date"], request_time=request_details["request_time"], request_status=request_details["request_status"]
         )
+    
+@router.websocket("/healthcheck")
+async def healthcheck(websocket: WebSocket):
+    print("websocket health check passed")
+
 
 @router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_audio(websocket: WebSocket):
+    print("connection started")
     await websocket.accept()
+    recognizer = sr.Recognizer()
+    audio_buffer = BytesIO()  # Buffer to accumulate audio chunks
+
     while True:
-        data = await websocket.receive_text()
-        print(f"Received: {data}")
-        await websocket.send_text(f"Echo: {data}")
+        try:
+            # Receive raw audio data as bytes
+            audio_chunk = await websocket.receive_bytes()
+            print(f"Received chunk of size: {len(audio_chunk)} bytes")
+
+            # Write the chunk to the buffer
+            audio_buffer.write(audio_chunk)
+
+            # Optional: Process the buffer when the client disconnects or after a timeout
+        except Exception as e:
+            print(f"Error: {e}")
+            break
+
+    # Process the accumulated audio buffer
+    audio_buffer.seek(0)  # Reset the buffer pointer to the beginning
+    with sr.AudioFile(audio_buffer) as source:
+        audio = recognizer.record(source)
+
+    # Convert speech to text
+    transcript = voice_methods.audio_to_text(audio)
+    print(f"Final transcript: {transcript}")
