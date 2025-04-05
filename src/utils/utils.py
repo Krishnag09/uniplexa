@@ -1,38 +1,18 @@
 # src/auth/utils.py
 
 import os
-import jwt
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import openai
 from dotenv import load_dotenv
 
-from passlib.context import CryptContext
 
-from config.config import config
-
+# Load environment variables from .env file
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-
-def create_access_token(data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, config.get("SECRET_KEY"), algorithm=config.get("ALGORITHM"))
 
 
 def display_menu():
@@ -95,5 +75,5 @@ def get_date_time():
     now = datetime.now()
     current_date = now.date()  # Returns a `date` object
     current_time = now.time()  # Returns a `time` object
-    current_time = current_time.strftime("%H:%M:%S")
+    # current_time = current_time.strftime("%H:%M:%S")
     return {"date": current_date, "time": current_time}

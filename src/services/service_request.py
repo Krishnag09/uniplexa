@@ -17,28 +17,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI()
 
 
-def create_user(db: Session, email: str, password: str):
-    user = db.query(models.User).filter(models.User.email == email).first()
-    if user:
-        raise exceptions.EmailAlreadyRegisteredException
 
-    hashed_password = utils.get_password_hash(password)
-    new_user = models.User(email=email, hashed_password=hashed_password)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
-
-
-def authenticate_user(db: Session, email: str, password: str):
-    user = db.query(models.User).filter(models.User.email == email).first()
-    if not user:
-        raise exceptions.UserNotFoundException
-
-    if not utils.verify_password(password, user.hashed_password):
-        raise exceptions.InvalidCredentialsException
-
-    return user
 
 def basic_query(db: Session, query: str):
     return db.execute(query).fetchall()
