@@ -13,8 +13,7 @@ class UserModel(Base):  # SQLAlchemy model for users
     user_id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
-    role = Column(SqlEnum(UserRole), nullable=False)  # Use UserRole enum
-    
+    role = Column(SqlEnum(UserRole), nullable=False, default=UserRole.USER)  # Use UserRole enum
     
 class ServiceRequestModel(Base):  # SQLAlchemy model for service requests
     __tablename__ = "service_requests"
