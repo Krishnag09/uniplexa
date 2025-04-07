@@ -27,11 +27,10 @@ recognizer = sr.Recognizer()
 
 def convert_audio_to_wav(audio_path):
     # Input MP3 file path
-    mp3_path = "/Users/krishnagaurav/uniplexa/src/audio/LG-turbowash-audio.mp3"
+    mp3_path = audio_path
 
     # Output WAV file path
-    wav_path = "/Users/krishnagaurav/uniplexa/src/audio/LG-turbowash-audio.wav"
-
+    wav_path = os.path.splitext(mp3_path)[0] + ".wav"
     # Convert MP3 to WAV
     audio = AudioSegment.from_file(mp3_path, format="mp3")
     audio.export(wav_path, format="wav")
