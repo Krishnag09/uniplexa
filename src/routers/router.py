@@ -1,4 +1,3 @@
-from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket
 from sqlalchemy.orm import Session
@@ -43,10 +42,7 @@ def login(user: schemas.UserLogin, db: Session = Depends(database.get_db)):
     try:
         db_user = signup_service.authenticate_user(
             db, email=user.email, password=user.password)
-        access_token_expires = timedelta(minutes=30)
-        access_token = signup_service.create_access_token(
-            data={"sub": db_user.email}, expires_delta=access_token_expires)
-        return {"access_token": access_token, "token_type": "bearer"}
+        return db_user
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
