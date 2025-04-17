@@ -1,10 +1,11 @@
 # src/auth/config.py
 
-# import os
+import json
+import os
 
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
-# load_dotenv()
+load_dotenv()
 
 
 # SECRET_KEY = os.getenv("SECRET_KEY", "default_secret_key")
@@ -14,10 +15,12 @@
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-import os
-import json
-
 class Config:
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    ALGORITHM = os.getenv("ALGORITHM")
+
+    if not SECRET_KEY or not ALGORITHM:
+        raise ValueError("SECRET_KEY and ALGORITHM must be set in the environment variables.")
     def __init__(self, config_file="config.json"):
         # Locate the JSON file relative to this script's directory
         self._base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

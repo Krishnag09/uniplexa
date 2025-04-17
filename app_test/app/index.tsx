@@ -8,30 +8,34 @@ import {
   Button,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // For mic icon
+import { Audio } from "expo-av";
 
 const WEBSOCKET_URL = "ws://192.168.1.73:8000/ws"; // Replace with your WebSocket server URL
 
 const WebSocketComponent = () => {
   const [isMicActive, setIsMicActive] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState("Disconnected");
+  const [silenceTimer, setSilenceTimer] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const ws = useRef<WebSocket | null>(null);
+  const recording = useRef<Audio.Recording | null>(null);
 
   // Initialize WebSocket connection
   useEffect(() => {
     ws.current = new WebSocket(WEBSOCKET_URL);
 
     ws.current.onopen = () => {
+      console.log("WebSocket Connected");
       setConnectionStatus("Connected");
-      console.log("WebSocket connected");
     };
 
     ws.current.onmessage = (e) => {
       console.log("Message from server:", e.data);
-      // You can process incoming messages here
     };
 
     ws.current.onerror = (e) => {
-      console.error("WebSocket error:", (e as ErrorEvent).message);
+      console.error("WebSocket error:", e);
       setConnectionStatus("Error");
       Alert.alert(
         "WebSocket error",
@@ -42,44 +46,67 @@ const WebSocketComponent = () => {
     ws.current.onclose = () => {
       setConnectionStatus("Disconnected");
       console.log("WebSocket disconnected");
-      Alert.alert("WebSocket disconnected", "Please refresh the page.");
     };
 
-    // Cleanup on unmount
     return () => {
       ws.current?.close();
     };
   }, []);
 
-  // Handle mic button toggle
+  const startRecording = async () => {
+    await Audio.requestPermissionsAsync();
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+    });
+
+    const { recording: rec } = await Audio.Recording.createAsync(
+      Audio.RecordingOptionsPresets.HIGH_QUALITY
+    );
+
+    rec.setOnRecordingStatusUpdate((status) => {
+      const rms = status.metering || -160; // Default to a very low value if metering is undefined
+      if (rms < -50) {
+        if (!silenceTimer) {
+          const timer = setTimeout(() => autoStopMic(), 1500);
+          setSilenceTimer(timer);
+        }
+      } else {
+        if (silenceTimer) {
+          clearTimeout(silenceTimer);
+          setSilenceTimer(null);
+        }
+      }
+    });
+
+    recording.current = rec;
+    setIsMicActive(true);
+    ws.current?.send(JSON.stringify({ event: "mic_on" }));
+  };
+
+  const stopRecording = async () => {
+    if (recording.current) {
+      await recording.current.stopAndUnloadAsync();
+      recording.current = null;
+    }
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      setSilenceTimer(null);
+    }
+    ws.current?.send(JSON.stringify({ event: "mic_off" }));
+    setIsMicActive(false);
+  };
+
   const toggleMic = () => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
       Alert.alert("WebSocket not connected", "Please wait for connection.");
       return;
     }
-
-    setIsMicActive((prev) => {
-      const newState = !prev;
-
-      if (newState) {
-        ws.current?.send(JSON.stringify({ event: "mic_on" }));
-        console.log("Mic activated");
-      } else {
-        ws.current?.send(JSON.stringify({ event: "mic_off" }));
-        console.log("Mic deactivated");
-      }
-
-      return newState;
-    });
+    isMicActive ? stopRecording() : startRecording();
   };
 
-  const sendMessage = () => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send("Hello from React Native!");
-      console.log("Message sent to server");
-    } else {
-      console.log("WebSocket is not connected");
-    }
+  const autoStopMic = () => {
+    console.log("Silence detected. Auto-stopping mic.");
+    stopRecording();
   };
 
   return (
@@ -96,13 +123,10 @@ const WebSocketComponent = () => {
       </TouchableOpacity>
 
       <Text style={styles.instruction}>
-        {isMicActive ? "Mic is Active 🎤" : "Tap mic to activate"}
+        {isMicActive
+          ? "Mic is Active 🎤 (Auto-stop enabled)"
+          : "Tap mic to activate"}
       </Text>
-      <Button
-        title={isMicActive ? "Deactivate Mic" : "Activate Mic"}
-        onPress={toggleMic}
-      />
-      <Button title="Send Message" onPress={sendMessage} />
     </View>
   );
 };
