@@ -205,9 +205,13 @@ async def websocket_audio(websocket: WebSocket):
 
     # Process the accumulated audio buffer
     audio_buffer.seek(0)  # Reset the buffer pointer to the beginning
-    with sr.AudioFile(audio_buffer) as source:
-        audio = recognizer.record(source)
+    temp_audio_path = os.path.join(AUDIO_DIR, "temp_audio.wav")
+    with open(temp_audio_path, "wb") as f:
+        f.write(audio_buffer.read())
 
     # Convert speech to text
-    transcript = voice_methods.audio_to_text(audio)
+    transcript = voice_methods.audio_to_text(temp_audio_path)
     print(f"Final transcript: {transcript}")
+
+    # Clean up the temporary file
+    os.remove(temp_audio_path)
