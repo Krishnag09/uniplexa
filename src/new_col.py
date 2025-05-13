@@ -5,7 +5,7 @@ conn = sqlite3.connect("/Users/krishnagaurav/uniplexa/src/test.db")
 cursor = conn.cursor()
 
 # Add a new column to the table
-cursor.execute("ALTER TABLE service_requests ADD COLUMN request_category TEXT")
+cursor.execute("ALTER TABLE users ADD COLUMN building_id INTEGER")
 
 # Commit the changes and close the connection
 conn.commit()

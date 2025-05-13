@@ -18,6 +18,11 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY")
     ALGORITHM = os.getenv("ALGORITHM")
+    SMTP_USERNAME= "care@uniplexa.com"
+    SMTP_SERVER= "smtp.hostinger.com"
+    SMTP_PORT=465
+    SMTP_PASSWORD= "Uniplexa@12345"
+    
 
     if not SECRET_KEY or not ALGORITHM:
         raise ValueError("SECRET_KEY and ALGORITHM must be set in the environment variables.")

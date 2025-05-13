@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, WebSocket
 from sqlalchemy.orm import Session
 
@@ -16,8 +15,11 @@ from config.config import config
 import speech_recognition as sr
 from services import voice_methods
 from io import BytesIO
-
-
+from datetime import timedelta
+from common.constants import PASSWORD_RESET_TIME, PASSWORD_RESET_LINK, SIGN_UP_LINK
+from common.constants import  NEW_USER_TOKEN_EXPIRE_MINUTES
+from utils import email_utils
+from pydantic import BaseModel
 
 
 # this is static for testing purposes.
@@ -25,6 +27,9 @@ AUDIO_DIR = os.path.join(config.base_dir, "audio")
 audio_path = os.path.join(AUDIO_DIR, "LG-turbowash-audio.mp3")
 
 router = APIRouter()
+
+class SignupLinkResponse(BaseModel):
+    signup_link: str
 
 @router.get("/hello")
 def read_root():
@@ -37,12 +42,142 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/add_user",response_model=schemas.SignupLinkResponse, description="Adds a new user")
+def add_user(request: schemas.AddUserRequest, db: Session = Depends(database.get_db)):
+    try:
+        # Extract data from the request model
+        email = request.email
+        user_role = request.user_role
+        building_id = request.building_id
+
+        # Check if the user already exists
+        user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
+        if user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+
+        # Generate a signup token
+        new_user_time_delta = timedelta(minutes=NEW_USER_TOKEN_EXPIRE_MINUTES)
+        new_user_token = signup_service.create_access_token(
+            {"email": email, "user_role": user_role, "building_id": building_id},
+            new_user_time_delta
+        )
+        
+
+        # Generate the signup link(should be https://example.com/set_password?token=..)
+        signup_link = f"{SIGN_UP_LINK}?token={new_user_token}"
+        print(f"Signup link for {email}: {signup_link}")
+
+        # Optionally send the signup link via email
+        email_body = f"Signup link for {email}: {signup_link}"
+        email_utils.send_email(to_email=email, subject="Complete Your Signup", body=email_body)
+
+        return {"signup_link": signup_link}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.post("/login", response_model=schemas.Token)
 def login(user: schemas.UserLogin, db: Session = Depends(database.get_db)):
     try:
         db_user = signup_service.authenticate_user(
             db, email=user.email, password=user.password)
         return db_user
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/set_password", response_model=schemas.UserCreate, description="Sets a password for the newly added user")
+def set_password(token: str, new_password: str, db: Session = Depends(database.get_db)):
+    try:
+        # Verify the token and extract user details
+        payload = signup_service.verify_token(token)
+        email = payload.get("email")
+        user_role = payload.get("user_role")
+        building_id = payload.get("building_id")
+
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        # Check if the user already exists
+        user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
+        if user:
+            raise HTTPException(status_code=400, detail="User already exists")
+
+        # Hash the new password and create the user
+        hashed_password = signup_service.get_password_hash(new_password)
+        new_user = models.UserModel(
+            email=email,
+            password=hashed_password,
+            user_role=user_role,
+            building_id=building_id
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        return {"message": "Password set successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@router.post("/change_password", response_model=schemas.UserCreate, description="Changes the password for the user")
+def change_password(token:str,old_password :str, new_password :str, db: Session = Depends(database.get_db)):
+    try:
+        # Verify the token and get the email
+        email = signup_service.verify_token(token).get("email")
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        if not signup_service.verify_password(old_password, user.password):
+            raise HTTPException(status_code=401, detail="Incorrect password")
+        hashed_password = signup_service.get_password_hash(new_password)
+        user.password = hashed_password
+        db.commit()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("forgot_password", response_model=schemas.UserCreate, description="Sends a password reset link to the user's email")
+
+def forgot_password(email: str, db: Session = Depends(database.get_db)):
+    try:
+        user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        new_user_time_delta = timedelta(minutes=PASSWORD_RESET_TIME)
+        password_reset_token = signup_service.create_access_token({"email": email}, new_user_time_delta)
+        password_reset_link= PASSWORD_RESET_LINK + f"?token={password_reset_token}"
+        print(f"First time user email link token: {password_reset_link}")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/password-reset", response_model=schemas.UserCreate, description="Resets the password for the user")
+def password_reset(token:str, new_password :str, db: Session = Depends(database.get_db)):
+    try:
+        # Verify the token and get the email
+        email = signup_service.verify_token(token).get("email")
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        hashed_password = signup_service.get_password_hash(new_password)
+        user.password = hashed_password
+        db.commit()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail= str(e))
+
+@router.post("/verify_token", description="Verifies the token and returns user details")
+def verify_token(token: str):
+    try:
+        # Verify the token and extract user details
+        payload = signup_service.verify_token(token)
+        email = payload.get("email")
+        user_role = payload.get("user_role")
+        building_id = payload.get("building_id")
+
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        return {"email": email, "user_role": user_role, "building_id": building_id}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

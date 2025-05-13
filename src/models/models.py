@@ -15,6 +15,8 @@ class UserModel(Base):  # SQLAlchemy model for users
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
     role = Column(SqlEnum(UserRole), nullable=False)  # Use UserRole enum
+    building_id = Column(Integer, nullable=True)  # Nullable for renters
+
     
 class ServiceRequestModel(Base):  # SQLAlchemy model for service requests
     __tablename__ = "service_requests"
@@ -26,3 +28,9 @@ class ServiceRequestModel(Base):  # SQLAlchemy model for service requests
     request_time = Column(Time, nullable=False)
     request_category = Column(String, nullable=False)
     request_status = Column(SqlEnum(RequestStatus), nullable=True)  # Use RequestStatus enum
+
+class UserRoleModel(Base):  # SQLAlchemy model for user roles
+    __tablename__ = "user_roles"
+
+    role_id = Column(Integer, primary_key=True, index=True)
+    role_name = Column(SqlEnum(UserRole),  nullable=False)

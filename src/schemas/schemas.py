@@ -2,14 +2,20 @@
 
 from pydantic import BaseModel
 from datetime import date, time
-from models.enums import RequestStatus
+from models.enums import RequestStatus, UserRole
 from typing import Optional
 
 
 class UserCreate(BaseModel):
     email: str
     password: str
+    role: UserRole
+    building_id: Optional[int] = None  # Nullable for renters
 
+class AddUserRequest(BaseModel):
+    email: str
+    user_role: UserRole = UserRole.renter  # Default value
+    building_id: Optional[int] = None  # Optional field
 
 class UserLogin(BaseModel):
     email: str
@@ -50,3 +56,6 @@ class ServiceRequestPatch(BaseModel):
 
 class AudioRequest(BaseModel):
     audio_path : str
+
+class SignupLinkResponse(BaseModel):
+    signup_link: str
