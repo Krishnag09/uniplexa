@@ -7,6 +7,9 @@ from datetime import datetime
 import openai
 from dotenv import load_dotenv
 
+from fastapi import Depends, HTTPException
+from jose import JWTError
+from services import signup_service
 
 # Load environment variables from .env file
 load_dotenv()
@@ -77,3 +80,18 @@ def get_date_time():
     current_time = now.time()  # Returns a `time` object
     # current_time = current_time.strftime("%H:%M:%S")
     return {"date": current_date, "time": current_time}
+
+
+def admin_role_dependency(token: str = Depends(signup_service.get_current_user)):
+    """
+    Dependency to validate if the current user has the 'admin' role.
+    """
+    try:
+        # Decode the token and extract user details
+        payload = signup_service.verify_token(token)
+        user_role = payload.get("user_role")
+
+        if user_role != "admin":
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")

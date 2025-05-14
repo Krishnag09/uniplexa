@@ -20,7 +20,7 @@ from common.constants import PASSWORD_RESET_TIME, PASSWORD_RESET_LINK, SIGN_UP_L
 from common.constants import  NEW_USER_TOKEN_EXPIRE_MINUTES
 from utils import email_utils
 from pydantic import BaseModel
-
+from utils.utils import admin_role_dependency
 
 # this is static for testing purposes.
 AUDIO_DIR = os.path.join(config.base_dir, "audio")
@@ -42,8 +42,12 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/add_user",response_model=schemas.SignupLinkResponse, description="Adds a new user")
-def add_user(request: schemas.AddUserRequest, db: Session = Depends(database.get_db)):
+@router.post("/add_user", response_model=schemas.SignupLinkResponse, description="Adds a new user")
+def add_user(
+    request: schemas.AddUserRequest,
+    db: Session = Depends(database.get_db),
+    admin: None = Depends(admin_role_dependency)  # Inject admin role validation
+):
     try:
         # Extract data from the request model
         email = request.email
@@ -61,16 +65,14 @@ def add_user(request: schemas.AddUserRequest, db: Session = Depends(database.get
             {"email": email, "user_role": user_role, "building_id": building_id},
             new_user_time_delta
         )
-        
 
-        # Generate the signup link(should be https://example.com/set_password?token=..)
+        # Generate the signup link
         signup_link = f"{SIGN_UP_LINK}?token={new_user_token}"
         print(f"Signup link for {email}: {signup_link}")
 
         # Optionally send the signup link via email
         email_body = f"Signup link for {email}: {signup_link}"
         email_utils.send_email(to_email=email, subject="Complete Your Signup", body=email_body)
-
         return {"signup_link": signup_link}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
