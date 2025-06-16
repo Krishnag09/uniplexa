@@ -9,6 +9,8 @@ from common import exceptions
 from common.constants import ACCESS_TOKEN_EXPIRE_MINUTES, NEW_USER_TOKEN_EXPIRE_MINUTES, SIGN_UP_LINK
 from config.config import config
 from models.enums import UserRole
+from jose import JWTError
+from fastapi import HTTPException
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -109,3 +111,15 @@ def change_password_first_time(db: Session, user_id: int, new_password: str):
     db.commit()
     db.refresh(user)
     return user
+
+def validate_token(token: str):
+    """
+    Validates the token and returns the decoded payload.
+    Raises an HTTPException if the token is invalid or expired.
+    """
+    try:
+        # Decode and validate the token
+        payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")

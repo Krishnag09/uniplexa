@@ -9,8 +9,7 @@ from dotenv import load_dotenv
 
 from fastapi import Depends, HTTPException
 from jose import JWTError
-from services import signup_service
-
+from services import signup
 # Load environment variables from .env file
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -82,13 +81,13 @@ def get_date_time():
     return {"date": current_date, "time": current_time}
 
 
-def admin_role_dependency(token: str = Depends(signup_service.get_current_user)):
+def admin_role_dependency(token: str = Depends(signup.get_user_role)):
     """
     Dependency to validate if the current user has the 'admin' role.
     """
     try:
         # Decode the token and extract user details
-        payload = signup_service.verify_token(token)
+        payload = signup.verify_token(token)
         user_role = payload.get("user_role")
 
         if user_role != "admin":
