@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, WebSocket
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, Header
 from sqlalchemy.orm import Session
 from services import signup
 from schemas import schemas
@@ -17,13 +17,17 @@ from io import BytesIO
 from datetime import timedelta
 from common.constants import PASSWORD_RESET_TIME, PASSWORD_RESET_LINK
 from pydantic import BaseModel
-from utils import admin_role_dependency, email_utils
-from common.constants import NEW_USER_TOKEN_EXPIRE_MINUTES, SIGN_UP_LINK
-
+from utils import utils, email_utils
 
 # this is static for testing purposes.
 AUDIO_DIR = os.path.join(config.base_dir, "audio")
 audio_path = os.path.join(AUDIO_DIR, "LG-turbowash-audio.mp3")
+
+# Define the signup link base URL
+SIGN_UP_LINK = "https://example.com/signup"
+
+# Define the expiration time for new user tokens
+NEW_USER_TOKEN_EXPIRE_MINUTES = 30
 
 router = APIRouter()
 
@@ -40,14 +44,23 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
         return signup.create_user(db, email=user.email, password=user.password)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
 
-@router.post("/add_user", description="Adds a new user")
+@router.post("/add_user", response_model=None, description="Adds a new user")
 def add_user(
     request: schemas.AddUserRequest,
     db: Session = Depends(database.get_db),
-    admin: None = Depends(admin_role_dependency)  # Inject admin role validation
+    token: str = Header(None)  # Extract token from the request header
 ):
     try:
+        # Validate the token and extract user details
+        payload = signup.validate_token(token)
+        user_role = payload.get("user_role")
+
+        # Check if the user has admin privileges
+        if user_role != "admin":
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+
         # Extract data from the request model
         email = request.email
         user_role = request.user_role
@@ -74,6 +87,7 @@ def add_user(
         email_utils.send_email(to_email=email, subject="Complete Your Signup", body=email_body)
 
         # Return the response
+        return {"message": "User added successfully", "signup_link": signup_link}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

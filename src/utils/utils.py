@@ -15,8 +15,6 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-
-
 def display_menu():
     print("\n What would you like to do?")
     print("1. Log a service request")
@@ -89,8 +87,9 @@ def admin_role_dependency(token: str = Depends(signup.get_user_role)):
         # Decode the token and extract user details
         payload = signup.verify_token(token)
         user_role = payload.get("user_role")
-
         if user_role != "admin":
-            raise HTTPException(status_code=403, detail="Admin privileges required")
+            return False
+        else:
+            return True
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
