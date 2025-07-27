@@ -2,9 +2,9 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models.models import Base
 
 from config.config import config
+from models.models import Base
 
 # Create engine and session
 engine = create_engine(config.get("DATABASE_URL"))

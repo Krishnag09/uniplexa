@@ -1,17 +1,21 @@
 
 
-from sqlalchemy.orm import Session
-from models import models
 from datetime import datetime, timedelta
-from passlib.context import CryptContext
-from jose import jwt
-from common import exceptions
-from common.constants import ACCESS_TOKEN_EXPIRE_MINUTES, NEW_USER_TOKEN_EXPIRE_MINUTES, SIGN_UP_LINK
-from config.config import config
-from models.enums import UserRole
-from jose import JWTError
-from fastapi import HTTPException
 
+from fastapi import HTTPException
+import jwt
+from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+
+from common import exceptions
+from common.constants import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    NEW_USER_TOKEN_EXPIRE_MINUTES,
+    SIGN_UP_LINK,
+)
+from config.config import config
+from models import models
+from models.enums import UserRole
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

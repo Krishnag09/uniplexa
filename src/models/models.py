@@ -1,9 +1,8 @@
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Date, Time
-from .enums import RequestStatus, UserRole
+from sqlalchemy import Column, Date, Integer, String, Time
 from sqlalchemy import Enum as SqlEnum
+from sqlalchemy.ext.declarative import declarative_base
 
-
+from .enums import RequestStatus, UserRole
 
 Base = declarative_base()
 

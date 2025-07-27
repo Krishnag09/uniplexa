@@ -1,9 +1,11 @@
 # src/auth/schemas.py
 
-from pydantic import BaseModel
 from datetime import date, time
-from models.enums import RequestStatus, UserRole
 from typing import Optional
+
+from pydantic import BaseModel
+
+from models.enums import RequestStatus, UserRole
 
 
 class UserCreate(BaseModel):
@@ -59,3 +61,7 @@ class AudioRequest(BaseModel):
 
 class SignupLinkResponse(BaseModel):
     signup_link: str
+
+class UserRoleResponse(BaseModel):
+    user_id: int
+    role: UserRole

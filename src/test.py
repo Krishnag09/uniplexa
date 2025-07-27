@@ -1,10 +1,11 @@
 import asyncio
-import websockets
-from config.config import config
 import os
-from pydub import AudioSegment
 from io import BytesIO
 
+import websockets
+from pydub import AudioSegment
+
+from config.config import config
 
 AUDIO_DIR = os.path.join(config.base_dir, "audio")
 audio_path = os.path.join(AUDIO_DIR, "LG-turbowash-audio.mp3")

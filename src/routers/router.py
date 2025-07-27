@@ -1,23 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, Header
-from sqlalchemy.orm import Session
-from services import signup
-from schemas import schemas
+import os
+from datetime import timedelta
+from io import BytesIO
 
-from models import models
+import speech_recognition as sr
+from fastapi import APIRouter, Depends, Header, HTTPException, WebSocket
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 import utils
-from services import service_request as service
 from common import database
-from services import voice_methods as voice_service
-import os
+from common.constants import PASSWORD_RESET_LINK, PASSWORD_RESET_TIME
 from config.config import config
-import speech_recognition as sr
-from services import voice_methods
-from io import BytesIO
-from datetime import timedelta
-from common.constants import PASSWORD_RESET_TIME, PASSWORD_RESET_LINK
-from pydantic import BaseModel
-from utils import utils, email_utils
+from models import models
+from schemas import schemas
+from services import service_request as service
+from services import signup, voice_methods
+from services import voice_methods as voice_service
+from utils import email_utils, utils
 
 # this is static for testing purposes.
 AUDIO_DIR = os.path.join(config.base_dir, "audio")
@@ -68,8 +67,10 @@ def add_user(
 
         # Check if the user already exists
         user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
-        if user and user.building_id == building_id:
-            raise HTTPException(status_code=400, detail="Email already registered for this building")
+        if user is not None:
+            user_building_id = user.building_id
+            if user_building_id is not None and user_building_id == building_id:
+                raise HTTPException(status_code=400, detail="Email already registered for this building")
 
         # Generate a signup token
         new_user_time_delta = timedelta(minutes=NEW_USER_TOKEN_EXPIRE_MINUTES)
@@ -103,9 +104,8 @@ def login(user: schemas.UserLogin, db: Session = Depends(database.get_db)):
 @router.post("/set_password", response_model=schemas.UserCreate, description="Sets a password for the newly added user")
 def set_password(token: str, new_password: str, db: Session = Depends(database.get_db)):
     try:
-        signup.validate_token(token)  # Validate the token
         # Verify the token and extract user details
-        payload = signup.verify_token(token)
+        payload = signup.validate_token(token)
         email = payload.get("email")
         user_role = payload.get("user_role")
         building_id = payload.get("building_id")
@@ -141,7 +141,7 @@ def change_password(token:str,old_password :str, new_password :str, db: Session 
         token = token.split("?token=")[-1]  # Extract the token from the URL
         signup.validate_token(token)  # Validate the token
         # Verify the token and get the email
-        email = signup.verify_token(token).get("email")
+        email = signup.validate_token(token).get("email")
 
         if not email:
             raise HTTPException(status_code=401, detail="Invalid token")
@@ -196,7 +196,7 @@ def password_reset(token:str, new_password :str, db: Session = Depends(database.
 def verify_token(token: str):
     try:
         # Verify the token and extract user details
-        payload = signup.verify_token(token)
+        payload = signup.validate_token(token)
         email = payload.get("email")
         user_role = payload.get("user_role")
         building_id = payload.get("building_id")
@@ -280,8 +280,8 @@ async def delete_request(request_id: int, db: Session = Depends(database.get_db)
     request = await db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
-    await db.delete(request)
-    await db.commit()
+    db.delete(request)
+    db.commit()
     return request
 
 @router.get("/service-request/all", response_model=schemas.ServiceRequest, description="returns all the requests") # add filtering for status, user, building, etc.

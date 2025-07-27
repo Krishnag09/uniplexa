@@ -1,23 +1,11 @@
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from schemas import schemas
-
-from models import models
-
-import utils
-from services import service_request as service
 from common import database
-from services import voice_methods as voice_service
-from services import signup as signup_service
-import os
-from config.config import config
-import speech_recognition as sr
-from services import voice_methods
-from io import BytesIO
-
-
+from models import models
+from schemas import schemas
 
 router = APIRouter()
 @router.get("/user_role/{user_id}", response_model=schemas.UserRoleResponse)

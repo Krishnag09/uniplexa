@@ -1,9 +1,8 @@
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from config import config  # Import your configuration module
-from fastapi import HTTPException
-
 import logging
+from email.mime.multipart import MIMEMultipart
+from fastapi import HTTPException
+from config import config  # Import your configuration module
+
 
 def send_email(to_email: str, subject: str, body: str):
     """

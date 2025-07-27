@@ -1,16 +1,16 @@
-import os
-import openai
-from dotenv import load_dotenv
-from openai import OpenAI
 import base64
-from utils.utils import  detect_category , get_date_time, summarize_request
-from config.config import config
-import speech_recognition as sr
-from fastapi import WebSocket
 import io
+import os
+
+import openai
+import speech_recognition as sr
+from dotenv import load_dotenv
+from fastapi import WebSocket
+from openai import OpenAI
 from pydub import AudioSegment
 
-
+from config.config import config
+from utils.utils import detect_category, get_date_time, summarize_request
 
 load_dotenv()
 

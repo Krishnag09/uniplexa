@@ -1,15 +1,15 @@
 # src/auth/utils.py
 
 import os
-
 from datetime import datetime
 
 import openai
 from dotenv import load_dotenv
-
 from fastapi import Depends, HTTPException
 from jose import JWTError
+
 from services import signup
+
 # Load environment variables from .env file
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
