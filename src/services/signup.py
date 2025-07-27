@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 import jwt
+from jwt import DecodeError, ExpiredSignatureError
+
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
@@ -121,9 +123,10 @@ def validate_token(token: str):
     Validates the token and returns the decoded payload.
     Raises an HTTPException if the token is invalid or expired.
     """
+
     try:
-        # Decode and validate the token
-        payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
-        return payload
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        payload = jwt.decode(token, config.SECRET_KEY, algorithms=["HS256"])
+    except DecodeError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
