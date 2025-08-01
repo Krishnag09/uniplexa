@@ -34,21 +34,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve React's static files (CSS, JS, etc.)
-app.mount("/static", StaticFiles(directory="static/build/static"), name="static")
-
-# Serve React's index.html at the root
-@app.get("/")
-def serve_react():
-    return FileResponse("static/build/index.html")
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup logic: Initialize the database
-    create_tables()
-    yield  # Application runs after this
-    # Shutdown logic (if needed)
-    print("Shutting down...")
     
     
 # Include the auth router

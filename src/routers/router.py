@@ -35,7 +35,8 @@ class SignupLinkResponse(BaseModel):
 
 @router.get("/hello")
 def read_root():
-    return {"name": "Krish"}
+    hell0 = "Hello, World!"
+    return {"message": hell0}
 
 @router.post("/register", response_model=schemas.UserCreate, description="Registers a new user")
 def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
