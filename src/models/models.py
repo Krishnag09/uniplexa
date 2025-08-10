@@ -10,13 +10,12 @@ Base = declarative_base()
 class UserModel(Base):  # SQLAlchemy model for users
     __tablename__ = "users"
 
-    user_id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, nullable=False)
-    password = Column(String, nullable=False)
+    password = Column(String, nullable=True)  # Nullable till password is set
     role = Column(SqlEnum(UserRole), nullable=False)  # Use UserRole enum
     building_id = Column(Integer, nullable=True)  # Nullable for renters
 
-    
 class ServiceRequestModel(Base):  # SQLAlchemy model for service requests
     __tablename__ = "service_requests"
 

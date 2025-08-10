@@ -3,8 +3,9 @@ from datetime import timedelta
 from io import BytesIO
 
 import speech_recognition as sr
-from fastapi import APIRouter, Depends, Header, HTTPException, WebSocket
+from fastapi import APIRouter, Depends, HTTPException, WebSocket
 from pydantic import BaseModel
+from schemas import schemas
 from sqlalchemy.orm import Session
 
 import utils
@@ -12,7 +13,6 @@ from common import database
 from common.constants import PASSWORD_RESET_LINK, PASSWORD_RESET_TIME
 from config.config import config
 from models import models
-from schemas import schemas
 from services import service_request as service
 from services import signup, voice_methods
 from services import voice_methods as voice_service
@@ -50,16 +50,16 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
 def add_user(
     request: schemas.AddUserRequest,
     db: Session = Depends(database.get_db),
-    token: str = Header(None)  # Extract token from the request header
+    # token: str = Header(None)  # Extract token from the request header
 ):
     try:
         # Validate the token and extract user details
-        payload = signup.validate_token(token)
-        user_role = payload.get("user_role")
+        # payload = signup.validate_token(token)
+        # user_role = payload.get("user_role")
 
-        # Check if the user has admin privileges
-        if user_role != "admin":
-            raise HTTPException(status_code=403, detail="Admin privileges required")
+        # # Check if the user has admin privileges
+        # if user_role != "admin":
+        #     raise HTTPException(status_code=403, detail="Admin privileges required")
 
         # Extract data from the request model
         email = request.email
@@ -73,6 +73,11 @@ def add_user(
             if user_building_id is not None and user_building_id == building_id:
                 raise HTTPException(status_code=400, detail="Email already registered for this building")
 
+        new_user = models.UserModel(
+            email=email,
+            role=user_role,
+            building_id=building_id
+        )
         # Generate a signup token
         new_user_time_delta = timedelta(minutes=NEW_USER_TOKEN_EXPIRE_MINUTES)
         new_user_token = signup.create_access_token(
@@ -87,12 +92,15 @@ def add_user(
         # Optionally send the signup link via email
         email_body = f"Signup link for {email}: {signup_link}"
         email_utils.send_email(to_email=email, subject="Complete Your Signup", body=email_body)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
 
         # Return the response
         return {"message": "User added successfully", "signup_link": signup_link}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
+    
 @router.post("/login", response_model=schemas.Token)
 def login(user: schemas.UserLogin, db: Session = Depends(database.get_db)):
     try:

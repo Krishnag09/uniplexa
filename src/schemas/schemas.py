@@ -65,3 +65,7 @@ class SignupLinkResponse(BaseModel):
 class UserRoleResponse(BaseModel):
     user_id: int
     role: UserRole
+
+class SetPasswordRequest(BaseModel):
+    token: str  # Token sent to the user (e.g., via email)
+    new_password: str
