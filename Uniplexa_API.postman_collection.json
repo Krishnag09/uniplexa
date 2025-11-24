@@ -1,0 +1,347 @@
+{
+	"info": {
+		"name": "Uniplexa API",
+		"description": "Complete API collection for Uniplexa endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Hello",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/hello",
+					"host": ["{{base_url}}"],
+					"path": ["hello"]
+				}
+			}
+		},
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"securepassword123\",\n    \"role\": \"renter\",\n    \"building_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/register",
+							"host": ["{{base_url}}"],
+							"path": ["register"]
+						}
+					}
+				},
+				{
+					"name": "Add User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"newuser@example.com\",\n    \"user_role\": \"renter\",\n    \"building_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/add_user",
+							"host": ["{{base_url}}"],
+							"path": ["add_user"]
+						}
+					}
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"securepassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": ["{{base_url}}"],
+							"path": ["login"]
+						}
+					}
+				},
+				{
+					"name": "Set Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/set_password?token={{signup_token}}&new_password=newpassword123",
+							"host": ["{{base_url}}"],
+							"path": ["set_password"],
+							"query": [
+								{
+									"key": "token",
+									"value": "{{signup_token}}"
+								},
+								{
+									"key": "new_password",
+									"value": "newpassword123"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/change_password?token={{auth_token}}&old_password=oldpassword123&new_password=newpassword123",
+							"host": ["{{base_url}}"],
+							"path": ["change_password"],
+							"query": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}"
+								},
+								{
+									"key": "old_password",
+									"value": "oldpassword123"
+								},
+								{
+									"key": "new_password",
+									"value": "newpassword123"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/forgot_password?email=user@example.com",
+							"host": ["{{base_url}}"],
+							"path": ["forgot_password"],
+							"query": [
+								{
+									"key": "email",
+									"value": "user@example.com"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Password Reset",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/password-reset?token={{reset_token}}&new_password=newpassword123",
+							"host": ["{{base_url}}"],
+							"path": ["password-reset"],
+							"query": [
+								{
+									"key": "token",
+									"value": "{{reset_token}}"
+								},
+								{
+									"key": "new_password",
+									"value": "newpassword123"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Verify Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/verify_token?token={{auth_token}}",
+							"host": ["{{base_url}}"],
+							"path": ["verify_token"],
+							"query": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Service Requests",
+			"item": [
+				{
+					"name": "Create Service Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"desc\": \"The washing machine in unit 3B is leaking water all over the floor. It started this morning and the water is spreading to the hallway.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/service-request",
+							"host": ["{{base_url}}"],
+							"path": ["service-request"]
+						}
+					}
+				},
+				{
+					"name": "Get Service Request",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/service-request/{{request_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["service-request", "{{request_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Get Request Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/service-request/status/{{request_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["service-request", "status", "{{request_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Get All Requests",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/service-request/all",
+							"host": ["{{base_url}}"],
+							"path": ["service-request", "all"]
+						}
+					}
+				},
+				{
+					"name": "Update Service Request",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"request_status\": \"in_progress\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/service-requests/{{request_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["service-requests", "{{request_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Service Request",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/service-request/{{request_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["service-request", "{{request_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "AI & Voice",
+			"item": [
+				{
+					"name": "Agent Query",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/agent/query",
+							"host": ["{{base_url}}"],
+							"path": ["agent", "query"]
+						}
+					}
+				},
+				{
+					"name": "Voice Summary",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/voice-summary",
+							"host": ["{{base_url}}"],
+							"path": ["voice-summary"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "signup_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "reset_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "request_id",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
+

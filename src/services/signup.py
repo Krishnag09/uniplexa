@@ -5,8 +5,10 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException
 import jwt
 
-from passlib.context import CryptContext
+import bcrypt
+from schemas.schemas import validate_password_length
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from common import exceptions
 from common.constants import (
@@ -18,27 +20,93 @@ from config.config import config
 from models import models
 from models.enums import UserRole
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt has a 72-byte limit on passwords
+BCRYPT_MAX_PASSWORD_LENGTH = 72
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def _truncate_password(password: str) -> bytes:
+    """Truncate password to bcrypt's 72-byte limit and return as bytes"""
+    password_bytes = password.encode("utf-8")
+    if len(password_bytes) > BCRYPT_MAX_PASSWORD_LENGTH:
+        return password_bytes[:BCRYPT_MAX_PASSWORD_LENGTH]
+    return password_bytes
 
+def get_password_hash(password: str) -> str:
+    """Hash a password using bcrypt directly (bypassing passlib compatibility issues)"""
+    # Truncate to 72 bytes before hashing
+    password_bytes = _truncate_password(password)
+    # Hash using bcrypt directly
+    hashed_bytes = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+    # Return as string for storage
+    return hashed_bytes.decode('utf-8')
 
-def get_password_hash(password):
-    return pwd_context.hash(password)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against a hash"""
+    # Truncate password to 72 bytes (same as during hashing)
+    password_bytes = _truncate_password(plain_password)
+    # Convert hash string back to bytes
+    hashed_bytes = hashed_password.encode('utf-8')
+    # Verify using bcrypt directly
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
-def create_user(db: Session, email: str, password: str):
-    user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
-    if user:
-        raise exceptions.EmailAlreadyRegisteredException
+def create_user(db: Session, email: str, password: str, role=None, building_id=None):
+    # 1) Normalize & quick validation
+    email_norm = email.strip().lower()
+    if not email_norm or "@" not in email_norm:
+        raise HTTPException(status_code=400, detail="Invalid email")
+    
+    # Validate role is provided (required field in database)
+    if role is None:
+        raise HTTPException(status_code=400, detail="Role is required")
+    
+    # Check if email already exists (before attempting insert)
+    existing_user = db.query(models.UserModel).filter(models.UserModel.email == email_norm).first()
+    if existing_user:
+        print(f"⚠️  Email collision detected: {email_norm} (original: {email})")
+        print(f"   Existing user ID: {existing_user.id}, Email: {existing_user.email}")
+        raise HTTPException(status_code=409, detail="Email already registered")
+    
+    print(f"✅ Email {email_norm} is available, proceeding with registration")
+    
+    print(f"Password: {password}")
+    # Enforce a sane password policy BEFORE hashing (length in characters, not bytes)
+    if not isinstance(password, str) or len(password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    print(f"Hashing password: {password}")
+    try:
+        # 2) Hash
+        hashed = get_password_hash(password)
 
-    hashed_password = get_password_hash(password)
-    new_user = models.UserModel(email=email, password=hashed_password)
-    user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+        # 3) Persist - Include role and building_id (role is required!)
+        new_user = models.UserModel(
+            email=email_norm, 
+            password=hashed,
+            role=role,  # Required field!
+            building_id=building_id
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return new_user
 
+    except IntegrityError as ie:
+        db.rollback()
+        # Check the actual error to provide better feedback
+        error_msg = str(ie.orig) if hasattr(ie, 'orig') else str(ie)
+        print(f"⚠️  IntegrityError: {error_msg}")
+        if "UNIQUE constraint" in error_msg or "duplicate key" in error_msg.lower():
+            raise HTTPException(status_code=409, detail="Email already registered") from ie
+        elif "NOT NULL constraint" in error_msg:
+            raise HTTPException(status_code=400, detail=f"Missing required field: {error_msg}") from ie
+        else:
+            raise HTTPException(status_code=400, detail=f"Database constraint violation: {error_msg}") from ie
+
+    except ValueError as ve:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(ve)) from ve
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Unable to create user: {str(e)}") from e
 
 def authenticate_user(db, email: str, password: str):
     # Query the user from the database
@@ -48,8 +116,8 @@ def authenticate_user(db, email: str, password: str):
     if not user:
         raise exceptions.UserNotFoundException
 
-    # Verify the password
-    if not pwd_context.verify(password, user.password):
+    # Verify the password (using verify_password to ensure consistent truncation)
+    if not verify_password(password, user.password):
         raise exceptions.InvalidCredentialsException
 
     # Generate JWT token

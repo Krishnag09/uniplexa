@@ -16,7 +16,7 @@ This README walks you through setting up the `uniplexa` project with Poetry, run
 
 ```bash
 git clone https://github.com/your-org/uniplexa.git
-cd uniplexa
+cd uniplexa/src
 ```
 
 ---
@@ -31,7 +31,15 @@ poetry install
 
 ---
 
-## 3. Activate the Poetry Shell (Optional)
+## 3. Install Poetry Shell Plugin (Optional but Recommended)
+
+To enable the `poetry shell` command, install the shell plugin:
+
+```bash
+poetry self add poetry-plugin-shell
+```
+
+## 4. Activate the Poetry Shell (Optional)
 
 To enter a shell with the project virtualenv on your `PATH`:
 
@@ -39,18 +47,24 @@ To enter a shell with the project virtualenv on your `PATH`:
 poetry shell
 ```
 
+or use 
+
+```bash 
+ eval $(poetry env activate)   
+ ```
+
 You should see the venv prefix in your prompt, e.g.: `(uniplexa-py3.13) ➜ uniplexa`
 
 > **Note:** You can skip manual activation if you always run commands via `poetry run ...`.
-
+  
 ---
 
-## 4. Run the Application Manually
+## 5. Run the Application Manually
 
 If you want to start the server without debugging:
 
 ```bash
-poetry run uvicorn src.main:app --reload --port 8000
+poetry run uvicorn main:app --reload --port 8000
 ```
 
 - **--reload**: auto‑reload on code changes
@@ -60,7 +74,7 @@ Visit [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for the Swagger U
 
 ---
 
-## 5. Visual Studio Code Debug Setup
+## 6. Visual Studio Code Debug Setup
 
 1. **Open the `uniplexa` folder** in VS Code.
 
@@ -100,7 +114,7 @@ Visit [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for the Swagger U
 
 ---
 
-## 6. Debugging the Application
+## 7. Debugging the Application
 
 1. In VS Code, go to the **Run and Debug** sidebar (`⇧⌘D` / `Ctrl+Shift+D`).
 2. Select **FastAPI (Uvicorn) 🚀** from the dropdown.
@@ -121,7 +135,7 @@ Execution will pause at your breakpoints. Use the Debug sidebar to inspect varia
 
 ---
 
-## 7. Cleaning Up
+## 8. Cleaning Up
 
 - To exit the Poetry shell: `exit` or `Ctrl+D`
 - To stop the server: `Ctrl+C` in the terminal

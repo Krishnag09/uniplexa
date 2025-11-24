@@ -6,6 +6,7 @@ import speech_recognition as sr
 from fastapi import APIRouter, Depends, HTTPException, WebSocket
 from pydantic import BaseModel
 from schemas import schemas
+from schemas.schemas import validate_password_length
 from sqlalchemy.orm import Session
 
 import utils
@@ -41,7 +42,16 @@ def read_root():
 @router.post("/register", response_model=schemas.UserCreate, description="Registers a new user")
 def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     try:
-        return signup.create_user(db, email=user.email, password=user.password)
+        return signup.create_user(
+            db, 
+            email=user.email, 
+            password=user.password,
+            role=user.role,  # Pass role from schema
+            building_id=user.building_id  # Pass building_id from schema
+        )
+    except HTTPException:
+        # Re-raise HTTPExceptions (like 409 for duplicate email) as-is
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
@@ -126,8 +136,13 @@ def set_password(token: str, new_password: str, db: Session = Depends(database.g
         user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
         if user:
             raise HTTPException(status_code=400, detail="User already exists")
-        if len(new_password) < 8:
-            raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+        
+        # Validate password length (min and max)
+        try:
+            validate_password_length(new_password)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        
         # Hash the new password and create the user
         hashed_password = signup.get_password_hash(new_password)
         new_user = models.UserModel(
@@ -160,8 +175,11 @@ def change_password(token:str,old_password :str, new_password :str, db: Session 
         if not signup.verify_password(old_password, user.password):
             raise HTTPException(status_code=401, detail="Incorrect password")
 
-        if len(new_password) < 8:
-            raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+        # Validate password length (min and max)
+        try:
+            validate_password_length(new_password)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
         hashed_password = signup.get_password_hash(new_password)
         user.password = hashed_password
@@ -193,8 +211,13 @@ def password_reset(token:str, new_password :str, db: Session = Depends(database.
         user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        if len(new_password) < 8:
-            raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+        
+        # Validate password length (min and max)
+        try:
+            validate_password_length(new_password)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        
         hashed_password = signup.get_password_hash(new_password)
         user.password = hashed_password
         db.commit()

@@ -1,0 +1,249 @@
+{
+  "endpoints": {
+    "GET /hello": {
+      "method": "GET",
+      "url": "/hello",
+      "description": "Simple hello endpoint",
+      "request_body": null,
+      "example_curl": "curl -X GET http://localhost:8000/hello"
+    },
+
+    "POST /register": {
+      "method": "POST",
+      "url": "/register",
+      "description": "Registers a new user",
+      "request_body": {
+        "email": "user@example.com",
+        "password": "securepassword123",
+        "role": "renter",
+        "building_id": 1
+      },
+      "example_curl": "curl -X POST http://localhost:8000/register -H 'Content-Type: application/json' -d '{\"email\":\"user@example.com\",\"password\":\"securepassword123\",\"role\":\"renter\",\"building_id\":1}'"
+    },
+
+    "POST /add_user": {
+      "method": "POST",
+      "url": "/add_user",
+      "description": "Adds a new user (admin only - currently commented out)",
+      "request_body": {
+        "email": "newuser@example.com",
+        "user_role": "renter",
+        "building_id": 1
+      },
+      "example_curl": "curl -X POST http://localhost:8000/add_user -H 'Content-Type: application/json' -d '{\"email\":\"newuser@example.com\",\"user_role\":\"renter\",\"building_id\":1}'"
+    },
+
+    "POST /login": {
+      "method": "POST",
+      "url": "/login",
+      "description": "Authenticates a user and returns a token",
+      "request_body": {
+        "email": "user@example.com",
+        "password": "securepassword123"
+      },
+      "example_curl": "curl -X POST http://localhost:8000/login -H 'Content-Type: application/json' -d '{\"email\":\"user@example.com\",\"password\":\"securepassword123\"}'"
+    },
+
+    "POST /set_password": {
+      "method": "POST",
+      "url": "/set_password",
+      "description": "Sets a password for a newly added user using token",
+      "request_body": null,
+      "query_params": {
+        "token": "your_signup_token_here",
+        "new_password": "newpassword123"
+      },
+      "example_curl": "curl -X POST 'http://localhost:8000/set_password?token=your_signup_token_here&new_password=newpassword123'"
+    },
+
+    "POST /change_password": {
+      "method": "POST",
+      "url": "/change_password",
+      "description": "Changes the password for an existing user",
+      "request_body": null,
+      "query_params": {
+        "token": "your_auth_token_here",
+        "old_password": "oldpassword123",
+        "new_password": "newpassword123"
+      },
+      "example_curl": "curl -X POST 'http://localhost:8000/change_password?token=your_auth_token_here&old_password=oldpassword123&new_password=newpassword123'"
+    },
+
+    "POST /forgot_password": {
+      "method": "POST",
+      "url": "/forgot_password",
+      "description": "Sends a password reset link to the user's email",
+      "request_body": null,
+      "query_params": {
+        "email": "user@example.com"
+      },
+      "example_curl": "curl -X POST 'http://localhost:8000/forgot_password?email=user@example.com'"
+    },
+
+    "POST /password-reset": {
+      "method": "POST",
+      "url": "/password-reset",
+      "description": "Resets the password using a reset token",
+      "request_body": null,
+      "query_params": {
+        "token": "your_reset_token_here",
+        "new_password": "newpassword123"
+      },
+      "example_curl": "curl -X POST 'http://localhost:8000/password-reset?token=your_reset_token_here&new_password=newpassword123'"
+    },
+
+    "POST /verify_token": {
+      "method": "POST",
+      "url": "/verify_token",
+      "description": "Verifies a token and returns user details",
+      "request_body": null,
+      "query_params": {
+        "token": "your_token_here"
+      },
+      "example_curl": "curl -X POST 'http://localhost:8000/verify_token?token=your_token_here'"
+    },
+
+    "POST /agent/query": {
+      "method": "POST",
+      "url": "/agent/query",
+      "description": "Queries the AI agent",
+      "request_body": null,
+      "example_curl": "curl -X POST http://localhost:8000/agent/query"
+    },
+
+    "POST /service-request": {
+      "method": "POST",
+      "url": "/service-request",
+      "description": "Creates a new service request from issue description",
+      "request_body": {
+        "desc": "The washing machine in unit 3B is leaking water all over the floor. It started this morning and the water is spreading to the hallway."
+      },
+      "example_curl": "curl -X POST http://localhost:8000/service-request -H 'Content-Type: application/json' -d '{\"desc\":\"The washing machine in unit 3B is leaking water all over the floor. It started this morning and the water is spreading to the hallway.\"}'"
+    },
+
+    "GET /service-request/{request_id}": {
+      "method": "GET",
+      "url": "/service-request/1",
+      "description": "Returns request details for the given request ID",
+      "request_body": null,
+      "path_params": {
+        "request_id": 1
+      },
+      "example_curl": "curl -X GET http://localhost:8000/service-request/1"
+    },
+
+    "GET /service-request/status/{request_id}": {
+      "method": "GET",
+      "url": "/service-request/status/1",
+      "description": "Returns request status for the request id",
+      "request_body": null,
+      "path_params": {
+        "request_id": 1
+      },
+      "example_curl": "curl -X GET http://localhost:8000/service-request/status/1"
+    },
+
+    "DELETE /service-request/{request_id}": {
+      "method": "DELETE",
+      "url": "/service-request/1",
+      "description": "Deletes the request for the request id",
+      "request_body": null,
+      "path_params": {
+        "request_id": 1
+      },
+      "example_curl": "curl -X DELETE http://localhost:8000/service-request/1"
+    },
+
+    "GET /service-request/all": {
+      "method": "GET",
+      "url": "/service-request/all",
+      "description": "Returns all the requests",
+      "request_body": null,
+      "example_curl": "curl -X GET http://localhost:8000/service-request/all"
+    },
+
+    "PATCH /service-requests/{request_id}": {
+      "method": "PATCH",
+      "url": "/service-requests/1",
+      "description": "Updates a service request (partial update)",
+      "request_body": {
+        "request_status": "in_progress"
+      },
+      "path_params": {
+        "request_id": 1
+      },
+      "alternative_bodies": [
+        {
+          "request_desc": "Updated description of the issue"
+        },
+        {
+          "request_title": "Updated Title",
+          "request_status": "completed"
+        },
+        {
+          "request_date": "2024-01-15",
+          "request_time": "14:30:00",
+          "request_status": "in_progress"
+        }
+      ],
+      "example_curl": "curl -X PATCH http://localhost:8000/service-requests/1 -H 'Content-Type: application/json' -d '{\"request_status\":\"in_progress\"}'"
+    },
+
+    "POST /voice-summary": {
+      "method": "POST",
+      "url": "/voice-summary",
+      "description": "Processes voice audio and returns request details",
+      "request_body": null,
+      "note": "This endpoint uses a hardcoded audio file path",
+      "example_curl": "curl -X POST http://localhost:8000/voice-summary"
+    }
+  },
+
+  "enum_values": {
+    "UserRole": ["renter", "manager", "admin"],
+    "RequestStatus": ["pending", "in_progress", "completed", "cancelled"]
+  },
+
+  "testing_workflow": {
+    "1_register_user": {
+      "endpoint": "POST /register",
+      "body": {
+        "email": "testuser@example.com",
+        "password": "testpassword123",
+        "role": "renter",
+        "building_id": 1
+      },
+      "save_response": "user_id or token"
+    },
+    "2_login": {
+      "endpoint": "POST /login",
+      "body": {
+        "email": "testuser@example.com",
+        "password": "testpassword123"
+      },
+      "save_response": "access_token"
+    },
+    "3_create_service_request": {
+      "endpoint": "POST /service-request",
+      "body": {
+        "desc": "The air conditioning unit in my apartment is not working. It's been very hot and I need it fixed urgently."
+      },
+      "save_response": "request_id"
+    },
+    "4_get_request": {
+      "endpoint": "GET /service-request/{request_id}",
+      "uses_saved": "request_id from step 3"
+    },
+    "5_update_request": {
+      "endpoint": "PATCH /service-requests/{request_id}",
+      "body": {
+        "request_status": "in_progress"
+      },
+      "uses_saved": "request_id from step 3"
+    },
+    "6_get_all_requests": {
+      "endpoint": "GET /service-request/all"
+    }
+  }
+}
+

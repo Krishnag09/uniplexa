@@ -3,9 +3,26 @@
 from datetime import date, time
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from models.enums import RequestStatus, UserRole
+
+# Password length constraints
+# Note: bcrypt has a 72-byte limit, but we validate on character length for better UX
+# Multi-byte characters will be truncated by the hashing function if needed
+MAX_PASSWORD_LENGTH = 72
+MIN_PASSWORD_LENGTH = 8
+
+
+def validate_password_length(password: str) -> str:
+    """Validate password length (minimum and maximum characters)"""
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise ValueError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters long")
+    
+    if len(password) > MAX_PASSWORD_LENGTH:
+        raise ValueError(f"Password cannot exceed {MAX_PASSWORD_LENGTH} characters")
+    
+    return password
 
 
 class UserCreate(BaseModel):
@@ -13,6 +30,11 @@ class UserCreate(BaseModel):
     password: str
     role: UserRole
     building_id: Optional[int] = None  # Nullable for renters
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        return validate_password_length(v)
 
 class AddUserRequest(BaseModel):
     email: str
@@ -69,3 +91,8 @@ class UserRoleResponse(BaseModel):
 class SetPasswordRequest(BaseModel):
     token: str  # Token sent to the user (e.g., via email)
     new_password: str
+    
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        return validate_password_length(v)
