@@ -29,10 +29,17 @@ def print_response(response: requests.Response, title: str):
     print(f"{title}")
     print(f"{'='*60}")
     print(f"Status Code: {response.status_code}")
+    print(f"Headers: {dict(response.headers)}")
+    print(f"\n--- Response Body (Raw) ---")
+    print(response.text)
+    print(f"\n--- Response Body (Parsed JSON) ---")
     try:
-        print(f"Response: {json.dumps(response.json(), indent=2)}")
-    except:
-        print(f"Response: {response.text}")
+        response_json = response.json()
+        print(json.dumps(response_json, indent=2))
+    except json.JSONDecodeError:
+        print("(Not valid JSON)")
+    except Exception as e:
+        print(f"(Error parsing JSON: {e})")
     print(f"{'='*60}\n")
 
 def test_hello():
@@ -78,9 +85,9 @@ def test_login(email: str):
         "password": TEST_PASSWORD
     }
     response = requests.post(f"{BASE_URL}/login", json=body)
-    print_response(response, f"POST /login (email: {email})")
+    print_response(response, "POST /login")
     
-    #Extract token for use in other tests
+    # Extract token for use in other tests
     if response.status_code == 200:
         token_data = response.json()
         return token_data.get("access_token")

@@ -8,7 +8,6 @@ from pydantic import BaseModel
 from schemas import schemas
 from schemas.schemas import validate_password_length
 from sqlalchemy.orm import Session
-
 import utils
 from common import database
 from common.constants import PASSWORD_RESET_LINK, PASSWORD_RESET_TIME
@@ -39,8 +38,8 @@ def read_root():
     hell0 = "Hello, World!"
     return {"message": hell0}
 
-@router.post("/register", response_model=schemas.UserCreate, description="Registers a new user")
-def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
+@router.post("/register", response_model=schemas.UserCreateRequest, description="Registers a new user")
+def register(user: schemas.UserCreateRequest, db: Session = Depends(database.get_db)):
     try:
         return signup.create_user(
             db, 
@@ -111,8 +110,8 @@ def add_user(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@router.post("/login", response_model=schemas.Token)
-def login(user: schemas.UserLogin, db: Session = Depends(database.get_db)):
+@router.post("/login", response_model=schemas.UserLoginResponse)
+def login(user: schemas.UserLoginRequest, db: Session = Depends(database.get_db)):
     try:
         db_user = signup.authenticate_user(
             db, email=user.email, password=user.password)
@@ -120,7 +119,7 @@ def login(user: schemas.UserLogin, db: Session = Depends(database.get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/set_password", response_model=schemas.UserCreate, description="Sets a password for the newly added user")
+@router.post("/set_password", response_model=schemas.UserCreateRequest, description="Sets a password for the newly added user")
 def set_password(token: str, new_password: str, db: Session = Depends(database.get_db)):
     try:
         # Verify the token and extract user details
@@ -159,7 +158,7 @@ def set_password(token: str, new_password: str, db: Session = Depends(database.g
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@router.post("/change_password", response_model=schemas.UserCreate, description="Changes the password for the user")
+@router.post("/change_password", response_model=schemas.UserCreateRequest, description="Changes the password for the user")
 def change_password(token:str,old_password :str, new_password :str, db: Session = Depends(database.get_db)):
     try:
         token = token.split("?token=")[-1]  # Extract the token from the URL
@@ -187,7 +186,7 @@ def change_password(token:str,old_password :str, new_password :str, db: Session 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("forgot_password", response_model=schemas.UserCreate, description="Sends a password reset link to the user's email")
+@router.post("forgot_password", response_model=schemas.UserCreateRequest, description="Sends a password reset link to the user's email")
 
 def forgot_password(email: str, db: Session = Depends(database.get_db)):
     try:
@@ -201,7 +200,7 @@ def forgot_password(email: str, db: Session = Depends(database.get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/password-reset", response_model=schemas.UserCreate, description="Resets the password for the user")
+@router.post("/password-reset", response_model=schemas.UserCreateRequest, description="Resets the password for the user")
 def password_reset(token:str, new_password :str, db: Session = Depends(database.get_db)):
     try:
         # Verify the token and get the email

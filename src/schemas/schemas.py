@@ -25,7 +25,7 @@ def validate_password_length(password: str) -> str:
     return password
 
 
-class UserCreate(BaseModel):
+class UserCreateRequest(BaseModel):
     email: str
     password: str
     role: UserRole
@@ -41,14 +41,21 @@ class AddUserRequest(BaseModel):
     user_role: UserRole = UserRole.renter  # Default value
     building_id: Optional[int] = None  # Optional field
 
-class UserLogin(BaseModel):
+class UserLoginRequest(BaseModel):
     email: str
     password: str
 
+class UserResponse(BaseModel):
+    """User information in response (without password)"""
+    id: int
+    email: str
+    role: UserRole
+    building_id: Optional[int] = None
 
-class Token(BaseModel):
+class UserLoginResponse(BaseModel):
     access_token: str
     token_type: str
+    user: UserResponse
 
 class Dashboard(BaseModel):
     dashboardq : str

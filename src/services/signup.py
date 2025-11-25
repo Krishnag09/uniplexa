@@ -125,7 +125,7 @@ def authenticate_user(db, email: str, password: str):
     access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
 
     # Return the token and user details
-    return {"access_token": access_token, "token_type": "bearer", "user": {"id": user.user_id, "email": user.email}}
+    return {"access_token": access_token, "token_type": "bearer", "user": {"id": user.id, "email": user.email, "role": user.role, "building_id": user.building_id}}
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
