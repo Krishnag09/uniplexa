@@ -1,9 +1,10 @@
 import os
 from datetime import timedelta
 from io import BytesIO
+from typing import Optional
 
 import speech_recognition as sr
-from fastapi import APIRouter, Depends, HTTPException, WebSocket
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, Header
 from pydantic import BaseModel
 from schemas import schemas
 from schemas.schemas import validate_password_length
@@ -17,6 +18,7 @@ from services import service_request as service
 from services import signup, voice_methods
 from services import voice_methods as voice_service
 from utils import email_utils, utils
+from utils.utils import get_current_user_dependency
 
 # this is static for testing purposes.
 AUDIO_DIR = os.path.join(config.base_dir, "audio")
@@ -223,21 +225,42 @@ def password_reset(token:str, new_password :str, db: Session = Depends(database.
     except Exception as e:
         raise HTTPException(status_code=400, detail= str(e))
 
-@router.post("/verify_token", description="Verifies the token and returns user details")
+@router.post("/verify_token", description="Verifies the token and returns token payload details")
 def verify_token(token: str):
     try:
-        # Verify the token and extract user details
+        # Verify the token and return the decoded payload
         payload = signup.validate_token(token)
-        email = payload.get("email")
+        
+        # Extract user details based on token type
+        # Login tokens use "sub" for email, other tokens use "email"
+        email = payload.get("sub") or payload.get("email")
         user_role = payload.get("user_role")
         building_id = payload.get("building_id")
-
+        
         if not email:
-            raise HTTPException(status_code=401, detail="Invalid token")
-
-        return {"email": email, "user_role": user_role, "building_id": building_id}
+            raise HTTPException(status_code=401, detail="Invalid token: missing email")
+        
+        return {
+            "email": email,
+            "user_role": user_role,
+            "building_id": building_id,
+            "token_payload": payload  # Include full payload for debugging
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/me", response_model=schemas.UserResponse, description="Get current authenticated user details")
+def get_current_user_info(current_user: models.UserModel = Depends(get_current_user_dependency)):
+    """
+    Get the current authenticated user's information.
+    Requires valid JWT token in Authorization header: 'Bearer <token>'
+    """
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "role": current_user.role,
+        "building_id": current_user.building_id
+    }
 
 @router.post("/agent/query")
 def open_ai_query():
@@ -250,26 +273,18 @@ def open_ai_query():
 @router.post("/service-request",response_model=schemas.ServiceRequest, description="details form the issue description")
 def create_request(request: schemas.Summary, db: Session = Depends(database.get_db)):
     try:
-        request_desc = request.desc
-        request_title = utils.summarize_request(request.desc)
-        request_category = utils.detect_category(request.desc)
+        request_description = request.desc
+        request_title = utils.summarize_request(request_description)
+        request_category = utils.detect_category(request_description)
         request_date_time = utils.get_date_time()
         request_status = schemas.RequestStatus.pending
-
-        request = schemas.ServiceRequest(
-            request_title=request_title, 
-            request_desc=request_desc, 
-            request_category=request_category,
-            request_date=request_date_time["date"], 
-            request_time=request_date_time["time"], 
-            request_status=request_status
-        )
-
+        
         request_model = models.ServiceRequestModel(
-            desc=request_desc, 
-            title=request_title, 
+            request_desc=request_description, 
+            request_title=request_title, 
             request_date=request_date_time["date"], 
             request_time=request_date_time["time"], 
+            request_category=request_category,
             request_status=request_status
         )
 
@@ -279,7 +294,7 @@ def create_request(request: schemas.Summary, db: Session = Depends(database.get_
         return {
             "request_id": request_model.request_id, 
             "request_title": request_title, 
-            "request_desc": request_desc, 
+            "request_desc": request_description, 
             "request_category": request_category, 
             "request_date": request_date_time["date"], 
             "request_time": request_date_time["time"], 

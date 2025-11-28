@@ -2,12 +2,15 @@
 
 import os
 from datetime import datetime
+from typing import Optional
 
 import openai
 from dotenv import load_dotenv
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Header
 from jose import JWTError
+from sqlalchemy.orm import Session
 
+from common import database
 from services import signup
 
 # Load environment variables from .env file
@@ -78,6 +81,26 @@ def get_date_time():
     # current_time = current_time.strftime("%H:%M:%S")
     return {"date": current_date, "time": current_time}
 
+
+def get_current_user_dependency(authorization: Optional[str] = Header(None), db: Session = Depends(database.get_db)):
+    """
+    Dependency to extract and validate JWT token from Authorization header.
+    Returns the current authenticated user.
+    Can be used as a FastAPI dependency in protected endpoints.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+    
+    # Extract token from "Bearer <token>" format
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Invalid authentication scheme. Use 'Bearer'")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid Authorization header format. Use 'Bearer <token>'")
+    
+    # Get current user from token
+    return signup.get_current_user(token=token, db=db)
 
 def admin_role_dependency(token: str = Depends(signup.get_user_role)):
     """

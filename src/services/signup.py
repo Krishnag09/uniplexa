@@ -196,3 +196,31 @@ def validate_token(token: str):
         return payload
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid or expired token") from e
+
+def get_current_user(token: str, db: Session) -> models.UserModel:
+    """
+    Gets the current authenticated user from the JWT token.
+    Requires token and database session to be provided.
+    """
+    try:
+        # Validate and decode the token
+        payload = validate_token(token)
+        
+        # Extract email from token (login tokens use "sub", others use "email")
+        email = payload.get("sub") or payload.get("email")
+        
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token: missing email")
+        
+        # Query database for full user details
+        user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return user
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid or expired token: {str(e)}") from e

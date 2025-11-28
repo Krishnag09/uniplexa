@@ -100,19 +100,69 @@ def test_verify_token(token: str):
     print_response(response, "POST /verify_token")
     return response
 # 
-def test_create_service_request():
-    """Test POST /service-request"""
+def test_create_service_request(desc: str = None):
+    """Test POST /service-request
+    
+    Args:
+        desc: Optional description text. If not provided, uses a default test description.
+    
+    Returns:
+        dict: Response data with request_id and all request fields, or None if failed
+    """
+    if desc is None:
+        desc = "The washing machine in unit 3B is leaking water all over the floor. It started this morning and the water is spreading to the hallway."
+    
     body = {
-        "desc": "The washing machine in unit 3B is leaking water all over the floor. It started this morning and the water is spreading to the hallway."
+        "desc": desc
     }
     response = requests.post(f"{BASE_URL}/service-request", json=body)
     print_response(response, "POST /service-request")
-    # 
-    # Extract request_id for use in other tests
+    
+    # Validate response
     if response.status_code == 200:
         request_data = response.json()
-        return request_data.get("request_id")
-    return None
+        
+        # Verify all required fields from ServiceRequest schema are present
+        # According to schemas.ServiceRequest, these are the required fields:
+        required_fields = [
+            "request_title", 
+            "request_desc", 
+            "request_category", 
+            "request_date", 
+            "request_time", 
+            "request_status"
+        ]
+        
+        missing_fields = [field for field in required_fields if field not in request_data]
+        if missing_fields:
+            print(f"⚠️  Missing required fields in response: {missing_fields}")
+            return None
+        
+        # Check for request_id (returned by endpoint, needed for subsequent tests)
+        request_id = request_data.get("request_id")
+        if request_id is None:
+            print("⚠️  request_id is missing from response (needed for other tests)")
+        
+        # Validate request_status is "pending" (default status)
+        if request_data.get("request_status") != "pending":
+            print(f"⚠️  Expected request_status to be 'pending', got: {request_data.get('request_status')}")
+        
+        # Validate request_desc matches input
+        if request_data.get("request_desc") != desc:
+            print(f"⚠️  request_desc does not match input description")
+        
+        if request_id:
+            print(f"✅ Service request created successfully with ID: {request_id}")
+        else:
+            print(f"✅ Service request created successfully")
+        print(f"   Title: {request_data.get('request_title')}")
+        print(f"   Category: {request_data.get('request_category')}")
+        print(f"   Status: {request_data.get('request_status')}")
+        
+        return request_data  # Return full response data
+    else:
+        print(f"❌ Failed to create service request. Status code: {response.status_code}")
+        return None
 # 
 def test_get_request(request_id: int):
     """Test GET /service-request/{request_id}"""
@@ -207,9 +257,10 @@ def main():
         test_verify_token(token)
     
     # Service requests
-    request_id = test_create_service_request()
+    request_data = test_create_service_request()
     
-    if request_id:
+    if request_data and request_data.get("request_id"):
+        request_id = request_data.get("request_id")
         test_get_request(request_id)
         test_get_request_status(request_id)
         test_patch_request(request_id)
