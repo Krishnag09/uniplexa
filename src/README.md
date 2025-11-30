@@ -135,7 +135,82 @@ Execution will pause at your breakpoints. Use the Debug sidebar to inspect varia
 
 ---
 
-## 8. Cleaning Up
+## 8. Running API Tests
+
+The project includes an end-to-end test script (`test_api.py`) that validates all API endpoints.
+
+### Prerequisites
+
+Before running the tests, ensure:
+1. The FastAPI server is running on `http://localhost:8000`
+2. You have activated the Poetry environment (or use `poetry run`)
+
+### Running the Tests
+
+From the `src/` directory, run:
+
+```bash
+poetry run python test_api.py
+```
+
+Or if you're already in the Poetry shell:
+
+```bash
+python test_api.py
+```
+
+### Understanding Test Results
+
+The test script will output detailed results for each endpoint:
+
+- **✅ Success indicators**: Green checkmarks indicate passing tests
+- **❌ Failure indicators**: Red X marks indicate failing tests
+- **⚠️ Warnings**: Yellow warnings indicate partial failures or missing data
+
+#### Test Coverage
+
+The script tests the following endpoints:
+
+1. **Basic Endpoints**
+   - `GET /hello` - Health check endpoint
+
+2. **User Management**
+   - `POST /register` - User registration
+   - `POST /login` - User authentication
+   - `POST /add_user` - Add user without password
+   - `POST /set_password` - Set password using signup token
+   - `POST /verify_token` - Verify JWT token
+   - `POST /forgot_password` - Request password reset
+   - `POST /password-reset` - Reset password with token
+
+3. **Service Requests**
+   - `POST /service-request` - Create service request
+   - `GET /service-request/{request_id}` - Get specific request
+   - `GET /service-request/status/{request_id}` - Get request status
+   - `GET /service-request/all` - Get all requests
+   - `PATCH /service-requests/{request_id}` - Update request
+
+4. **Other Endpoints**
+   - `POST /agent/query` - Agent query endpoint
+   - `POST /voice-summary` - Voice summary endpoint
+
+### Expected Output
+
+A successful test run will show:
+- Status codes (200 for success, 4xx/5xx for errors)
+- Response headers and body
+- Parsed JSON responses
+- Success/failure indicators for each test
+
+### Troubleshooting
+
+- **ModuleNotFoundError**: Ensure you're using `poetry run python` or are in the Poetry shell
+- **Connection errors**: Verify the server is running on port 8000
+- **Test failures**: Check the detailed error messages in the output for specific endpoint issues
+
+---
+
+## 9. Cleaning Up
 
 - To exit the Poetry shell: `exit` or `Ctrl+D`
 - To stop the server: `Ctrl+C` in the terminal
@@ -147,5 +222,8 @@ Execution will pause at your breakpoints. Use the Debug sidebar to inspect varia
 - [FastAPI Documentation](https://fastapi.tiangolo.com)
 - [Poetry Documentation](https://python-poetry.org/docs)
 - [VS Code Python Debugging](https://code.visualstudio.com/docs/python/debugging)
+
+
+
 
 Happy coding! 🎉

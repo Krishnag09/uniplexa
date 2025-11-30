@@ -1,6 +1,7 @@
 
 
 from datetime import datetime, timedelta
+from time import timezone
 
 from fastapi import HTTPException
 import jwt
@@ -123,6 +124,7 @@ def authenticate_user(db, email: str, password: str):
     # Generate JWT token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
+    
 
     # Return the token and user details
     return {"access_token": access_token, "token_type": "bearer", "user": {"id": user.id, "email": user.email, "role": user.role, "building_id": user.building_id}}

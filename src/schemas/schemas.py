@@ -36,6 +36,22 @@ class UserCreateRequest(BaseModel):
     def validate_password(cls, v: str) -> str:
         return validate_password_length(v)
 
+class UserSetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+    
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        return validate_password_length(v)
+
+
+class UserForgotPasswordRequest(BaseModel):
+    email: str
+
+class UserForgotPasswordResponse(BaseModel):
+    message: str
+
 class AddUserRequest(BaseModel):
     email: str
     user_role: UserRole = UserRole.renter  # Default value
