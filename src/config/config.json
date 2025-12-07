@@ -1,9 +1,12 @@
 {
-  "SECRET_KEY": "default_secret_key",
   "ALGORITHM": "HS256",
   "ACCESS_TOKEN_EXPIRE_MINUTES": 30,
   "DATABASE_URL": "sqlite:///./test.db",
   "BASE_URL": "http://localhost:8000",
-  "SMTP_USERNAME": "krishnagaurav1985",
-  "SMTP_PASSWORD": "Kgaurav85"
+  "SMTP_SERVER": "smtp.hostinger.com",
+  "SMTP_PORT": 465,
+  "SIGN_UP_LINK": "https://example.com/set_password",
+  "PASSWORD_RESET_LINK": "https://example.com/reset_password",
+  "PASSWORD_RESET_TIME": 5,
+  "NEW_USER_TOKEN_EXPIRE_MINUTES": 5
 }

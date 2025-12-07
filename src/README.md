@@ -31,6 +31,70 @@ poetry install
 
 ---
 
+## 2.5. Configure Environment Variables
+
+**⚠️ IMPORTANT:** This project uses environment variables for all sensitive credentials. You must set up a `.env` file before running the application.
+
+### Step 1: Create `.env` file
+
+Create a `.env` file in the `src/` directory:
+
+```bash
+cd src
+cp .env.example .env  # If .env.example exists, or create manually
+```
+
+### Step 2: Set Required Environment Variables
+
+Edit the `.env` file and fill in your actual credentials. **Never commit the `.env` file to version control.**
+
+Required variables:
+
+```bash
+# JWT Configuration (REQUIRED)
+SECRET_KEY=your-secret-key-here-change-in-production
+ALGORITHM=HS256
+
+# Database Configuration
+DATABASE_URL=sqlite:///./test.db
+
+# Application Configuration
+BASE_URL=http://localhost:8000
+
+# SMTP Email Configuration (Required for email functionality)
+SMTP_USERNAME=your-email@example.com
+SMTP_PASSWORD=your-email-password
+SMTP_SERVER=smtp.hostinger.com
+SMTP_PORT=465
+
+# OpenAI API Configuration (Required for AI features)
+OPENAI_API_KEY=your-openai-api-key-here
+
+# Password Reset & Signup Links
+SIGN_UP_LINK=https://example.com/set_password
+PASSWORD_RESET_LINK=https://example.com/reset_password
+PASSWORD_RESET_TIME=5
+NEW_USER_TOKEN_EXPIRE_MINUTES=5
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+### Security Best Practices
+
+1. **Never commit `.env` files** - They are already in `.gitignore`
+2. **Use strong, unique values** for `SECRET_KEY` in production
+3. **Rotate credentials regularly** especially if exposed
+4. **Use different credentials** for development, staging, and production
+5. **Store production secrets** in a secure secret management service (AWS Secrets Manager, HashiCorp Vault, etc.)
+
+### Environment Variable Priority
+
+The application loads configuration in this order (highest priority first):
+1. Environment variables (from `.env` file or system environment)
+2. `config.json` file (for non-sensitive defaults)
+3. Hardcoded defaults (only for non-sensitive values)
+
+---
+
 ## 3. Install Poetry Shell Plugin (Optional but Recommended)
 
 To enable the `poetry shell` command, install the shell plugin:
