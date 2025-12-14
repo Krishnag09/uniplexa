@@ -101,8 +101,8 @@ def add_user(
         print(f"Signup link for {email}: {signup_link}")
 
         # Optionally send the signup link via email
-        email_body = f"Signup link for {email}: {signup_link}"
-        email_utils.send_email(to_email=email, subject="Complete Your Signup", body=email_body)
+        # email_body = f"Signup link for {email}: {signup_link}"
+        # email_utils.send_email(to_email=email, subject="Complete Your Signup", body=email_body)
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
@@ -290,8 +290,9 @@ def create_request(request: schemas.Summary, db: Session = Depends(database.get_
         db.add(request_model)
         db.commit()
         db.refresh(request_model)
+        request_id = request_model.request_id  # Access the generated primary key after commit
         return {
-            "request_id": request_model.request_id, 
+            "request_id": request_id, 
             "request_title": request_title, 
             "request_desc": request_description, 
             "request_category": request_category, 
@@ -312,15 +313,15 @@ def get_request(request_id: int, db: Session = Depends(database.get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/service-request/status/{request_id}", response_model=schemas.ServiceRequest, description="returns request status for the request id")
-async def get_request_status(request_id: int, db: Session = Depends(database.get_db)):
-    request = await db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
+@router.get("/service-request/status/{request_id}", response_model=schemas.ServiceRequestStatusResponse, description="returns request status for the request id")
+def get_request_status(request_id: int, db: Session = Depends(database.get_db)):
+    request = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
-    return request.request_status
+    return {"request_status": request.request_status}
 
 
-@router.delete("/service-request/{request_id}", response_model=schemas.ServiceRequest, description="deletes the request for the request id")
+@router.delete("/service-request/{request_id}", response_model=None, description="deletes the request for the request id")
 async def delete_request(request_id: int, db: Session = Depends(database.get_db)):
     request = await db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
     if not request:
@@ -329,13 +330,13 @@ async def delete_request(request_id: int, db: Session = Depends(database.get_db)
     db.commit()
     return request
 
-@router.get("/service-request/all", response_model=schemas.ServiceRequest, description="returns all the requests") # add filtering for status, user, building, etc.
-async def get_all_requests(db: Session = Depends(database.get_db)):
-    requests = await db.query(models.ServiceRequestModel).all()
+@router.get("/service-request/all/{building_id}", response_model=schemas.ServiceRequest, description="returns all the requests") # add filtering for status, user, building, etc.
+async def get_all_requests(building_id: int, db: Session = Depends(database.get_db)):
+    requests = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.building_id == building_id).all()
     return requests
 
 
-@router.patch("/service-requests/{request_id}", response_model=schemas.ServiceRequestPatch)
+@router.patch("/service-request/{request_id}", response_model=schemas.ServiceRequest, description="Updates a service request (partial update)")
 def patch_service_request(
     request_id: int,
     request_data: schemas.ServiceRequestPatch,
@@ -355,13 +356,19 @@ def patch_service_request(
 
     db.commit()
     db.refresh(db_request)  # Refresh the instance with the updated database data
-    return schemas.ServiceRequestPatch(
+    print(f"Updated request: {db_request}")
+    # Return the full ServiceRequest with all fields
+    new_request = schemas.ServiceRequest(
+        request_id=db_request.request_id,
         request_desc=db_request.request_desc,
         request_title=db_request.request_title,
+        request_category=db_request.request_category,
         request_date=db_request.request_date,
         request_time=db_request.request_time,
         request_status=db_request.request_status,
     )
+    return new_request
+
 
 
 @router.post("/voice-summary", response_model=schemas.ServiceRequest, description="returns request details for input voice")

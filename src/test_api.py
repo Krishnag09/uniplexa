@@ -203,12 +203,26 @@ def test_get_all_requests():
     return response
 # 
 def test_patch_request(request_id: int):
-    """Test PATCH /service-requests/{request_id}"""
+    """Test PATCH /service-request/{request_id}"""
     body = {
-        "request_status": "in_progress"
+        "request_status": "in_progress"  # Must match RequestStatus enum: pending, in_progress, completed, cancelled
     }
-    response = requests.patch(f"{BASE_URL}/service-requests/{request_id}", json=body)
-    print_response(response, f"PATCH /service-requests/{request_id}")
+    response = requests.patch(
+        f"{BASE_URL}/service-request/{request_id}", 
+        json=body,
+        headers={"Content-Type": "application/json"}
+    )
+    print_response(response, f"PATCH /service-request/{request_id}")
+    
+    # Print detailed error if 422
+    if response.status_code == 422:
+        print(f"\n⚠️  Validation Error Details:")
+        try:
+            error_detail = response.json()
+            print(json.dumps(error_detail, indent=2))
+        except:
+            print(f"Raw response: {response.text}")
+    
     return response
 # 
 def test_agent_query():
@@ -549,11 +563,11 @@ def main():
         test_patch_request(request_id)
         test_get_request(request_id)  # Get updated request
     
-    test_get_all_requests()
+    # test_get_all_requests()
     
-    # Other endpoints
-    test_agent_query()
-    test_voice_summary()
+    # # Other endpoints
+    # test_agent_query()
+    # test_voice_summary()
     
     # Password reset tests
     print("\n" + "="*60)

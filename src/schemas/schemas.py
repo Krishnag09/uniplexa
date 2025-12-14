@@ -83,6 +83,7 @@ class Summary(BaseModel):
     desc : str
 
 class ServiceRequest(BaseModel):
+    request_id: Optional[int] = None  # Optional for creation, present in responses
     request_desc : str
     request_title : str
     request_category : str
@@ -91,12 +92,16 @@ class ServiceRequest(BaseModel):
     request_status : RequestStatus
     
 
+class ServiceRequestStatusResponse(BaseModel):
+    """Response model for service request status endpoint"""
+    request_status: RequestStatus
+
 class ServiceRequestPatch(BaseModel):
-    request_desc: Optional[str]
-    request_title: Optional[str]
-    request_date: Optional[date]
-    request_time: Optional[time]
-    request_status: Optional[RequestStatus]  # Use RequestStatus enum
+    request_desc: Optional[str] = None
+    request_title: Optional[str] = None
+    request_date: Optional[date] = None
+    request_time: Optional[time] = None
+    request_status: Optional[RequestStatus] = None  # Use RequestStatus enum
 
     class Config:
         orm_mode = True
