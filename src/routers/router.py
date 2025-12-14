@@ -273,6 +273,7 @@ def open_ai_query():
 def create_request(request: schemas.Summary, db: Session = Depends(database.get_db)):
     try:
         request_description = request.desc
+        building_id = request.building_id
         request_title = utils.summarize_request(request_description)
         request_category = utils.detect_category(request_description)
         request_date_time = utils.get_date_time()
@@ -284,7 +285,8 @@ def create_request(request: schemas.Summary, db: Session = Depends(database.get_
             request_date=request_date_time["date"], 
             request_time=request_date_time["time"], 
             request_category=request_category,
-            request_status=request_status
+            request_status=request_status,
+            building_id=building_id
         )
 
         db.add(request_model)
@@ -292,7 +294,9 @@ def create_request(request: schemas.Summary, db: Session = Depends(database.get_
         db.refresh(request_model)
         request_id = request_model.request_id  # Access the generated primary key after commit
         return {
-            "request_id": request_id, 
+            "request_id": request_id,
+            "user_id": request_model.user_id,
+            "building_id": building_id,
             "request_title": request_title, 
             "request_desc": request_description, 
             "request_category": request_category, 
@@ -360,6 +364,8 @@ def patch_service_request(
     # Return the full ServiceRequest with all fields
     new_request = schemas.ServiceRequest(
         request_id=db_request.request_id,
+        user_id=db_request.user_id,
+        building_id=db_request.building_id,
         request_desc=db_request.request_desc,
         request_title=db_request.request_title,
         request_category=db_request.request_category,
@@ -372,7 +378,7 @@ def patch_service_request(
 
 
 @router.post("/voice-summary", response_model=schemas.ServiceRequest, description="returns request details for input voice")
-async def consume_voice_api( db: Session = Depends(database.get_db)):
+async def consume_voice_api(building_id: int, db: Session = Depends(database.get_db)):
     audio_path = os.path.join(AUDIO_DIR, "LG-turbowash-audio.mp3")
     
     voice_to_text = voice_service.audio_to_text(audio_path)
@@ -381,14 +387,28 @@ async def consume_voice_api( db: Session = Depends(database.get_db)):
     
     # Save the request details to the database
     request_model = models.ServiceRequestModel(
-        request_title=request_details["request_title"], request_desc=request_details["request_desc"], request_category=request_details["request_category"], request_date=request_details["request_date"], request_time=request_details["request_time"], request_status=request_details["request_status"]
+        request_title=request_details["request_title"], 
+        request_desc=request_details["request_desc"], 
+        request_category=request_details["request_category"], 
+        request_date=request_details["request_date"], 
+        request_time=request_details["request_time"], 
+        request_status=request_details["request_status"],
+        building_id=building_id
     )
     db.add(request_model)
     db.commit()
     db.refresh(request_model)
     # Return the request details for preview
     return schemas.ServiceRequest(
-        request_title=request_details["request_title"], request_desc=request_details["request_desc"], request_category=request_details["request_category"], request_date=request_details["request_date"], request_time=request_details["request_time"], request_status=request_details["request_status"]
+        request_id=request_model.request_id,
+        user_id=request_model.user_id,
+        building_id=building_id,
+        request_title=request_details["request_title"], 
+        request_desc=request_details["request_desc"], 
+        request_category=request_details["request_category"], 
+        request_date=request_details["request_date"], 
+        request_time=request_details["request_time"], 
+        request_status=request_details["request_status"]
         )
     
 @router.websocket("/healthcheck")

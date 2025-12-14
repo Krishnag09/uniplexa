@@ -81,9 +81,12 @@ class Answer(BaseModel):
     
 class Summary(BaseModel):
     desc : str
+    building_id: int
 
 class ServiceRequest(BaseModel):
     request_id: Optional[int] = None  # Optional for creation, present in responses
+    user_id: Optional[int] = None  # Optional until authentication is added
+    building_id: int
     request_desc : str
     request_title : str
     request_category : str
@@ -102,6 +105,8 @@ class ServiceRequestPatch(BaseModel):
     request_date: Optional[date] = None
     request_time: Optional[time] = None
     request_status: Optional[RequestStatus] = None  # Use RequestStatus enum
+    building_id: Optional[int] = None
+    user_id: Optional[int] = None
 
     class Config:
         orm_mode = True

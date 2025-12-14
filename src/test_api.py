@@ -120,11 +120,12 @@ def test_verify_token(token: str):
     print_response(response, "POST /verify_token")
     return response
 # 
-def test_create_service_request(desc: str = None):
+def test_create_service_request(desc: str = None, building_id: int = None):
     """Test POST /service-request
     
     Args:
         desc: Optional description text. If not provided, uses a default test description.
+        building_id: Optional building ID. If not provided, uses TEST_BUILDING_ID.
     
     Returns:
         dict: Response data with request_id and all request fields, or None if failed
@@ -132,8 +133,12 @@ def test_create_service_request(desc: str = None):
     if desc is None:
         desc = "The washing machine in unit 3B is leaking water all over the floor. It started this morning and the water is spreading to the hallway."
     
+    if building_id is None:
+        building_id = TEST_BUILDING_ID
+    
     body = {
-        "desc": desc
+        "desc": desc,
+        "building_id": building_id
     }
     response = requests.post(f"{BASE_URL}/service-request", json=body)
     print_response(response, "POST /service-request")
@@ -145,6 +150,7 @@ def test_create_service_request(desc: str = None):
         # Verify all required fields from ServiceRequest schema are present
         # According to schemas.ServiceRequest, these are the required fields:
         required_fields = [
+            "building_id",
             "request_title", 
             "request_desc", 
             "request_category", 
@@ -175,6 +181,7 @@ def test_create_service_request(desc: str = None):
             print(f"✅ Service request created successfully with ID: {request_id}")
         else:
             print(f"✅ Service request created successfully")
+        print(f"   Building ID: {request_data.get('building_id')}")
         print(f"   Title: {request_data.get('request_title')}")
         print(f"   Category: {request_data.get('request_category')}")
         print(f"   Status: {request_data.get('request_status')}")
@@ -231,10 +238,18 @@ def test_agent_query():
     print_response(response, "POST /agent/query")
     return response
 # 
-def test_voice_summary():
-    """Test POST /voice-summary"""
-    response = requests.post(f"{BASE_URL}/voice-summary")
-    print_response(response, "POST /voice-summary")
+def test_voice_summary(building_id: int = None):
+    """Test POST /voice-summary
+    
+    Args:
+        building_id: Optional building ID. If not provided, uses TEST_BUILDING_ID.
+    """
+    if building_id is None:
+        building_id = TEST_BUILDING_ID
+    
+    params = {"building_id": building_id}
+    response = requests.post(f"{BASE_URL}/voice-summary", params=params)
+    print_response(response, f"POST /voice-summary (building_id: {building_id})")
     return response
 # 
 def test_set_password(token: str, new_password: str = "newpassword123"):
@@ -563,7 +578,7 @@ def main():
         test_patch_request(request_id)
         test_get_request(request_id)  # Get updated request
     
-    # test_get_all_requests()
+    test_get_all_requests()
     
     # # Other endpoints
     # test_agent_query()

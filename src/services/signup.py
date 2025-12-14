@@ -158,7 +158,7 @@ def check_permissions(user_role: str, required_role: str):
     return True
 
 def get_user_role(db: Session, user_id: int):
-    user = db.query(models.UserModel).filter(models.UserModel.user_id == user_id).first()
+    user = db.query(models.UserModel).filter(models.UserModel.id == user_id).first()
     if not user:
         raise exceptions.UserNotFoundException
     return user.role
@@ -177,7 +177,7 @@ def add_user(db: Session, email: str, user_role: UserRole.renter = UserRole.rent
     return first_time_user_email_link_token
 
 def change_password_first_time(db: Session, user_id: int, new_password: str):
-    user = db.query(models.UserModel).filter(models.UserModel.user_id == user_id).first()
+    user = db.query(models.UserModel).filter(models.UserModel.id == user_id).first()
     if not user:
         raise exceptions.UserNotFoundException
 
