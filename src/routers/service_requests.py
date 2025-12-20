@@ -86,7 +86,7 @@ def get_all_requests(building_id: int, db: Session = Depends(database.get_db)):
     return {"requests": requests}
 
 
-@router.patch("/service-request/{request_id}", response_model=schemas.ServiceRequestAllResponse, description="Updates a service request (partial update)")
+@router.patch("/service-request/{request_id}", response_model=schemas.ServiceRequest, description="Updates a service request (partial update)")
 def patch_service_request(
     request_id: int,
     request_data: schemas.ServiceRequestPatch,
@@ -100,7 +100,7 @@ def patch_service_request(
         raise HTTPException(status_code=404, detail="Service request not found")
 
     # Update only the fields provided in the request_data
-    update_data = request_data.dict(exclude_unset=True)
+    update_data = request_data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_request, key, value)  # Dynamically update attributes
 
