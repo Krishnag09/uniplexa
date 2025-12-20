@@ -1,7 +1,7 @@
 # src/auth/schemas.py
 
 from datetime import date, time
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, field_validator
 
@@ -94,7 +94,9 @@ class ServiceRequest(BaseModel):
     request_time : time
     request_status : RequestStatus
     
-
+class ServiceRequestAllResponse(BaseModel):
+    requests: List[ServiceRequest]
+    
 class ServiceRequestStatusResponse(BaseModel):
     """Response model for service request status endpoint"""
     request_status: RequestStatus
@@ -129,3 +131,35 @@ class SetPasswordRequest(BaseModel):
     @classmethod
     def validate_password(cls, v: str) -> str:
         return validate_password_length(v)
+
+# Building schemas
+class BuildingCreateRequest(BaseModel):
+    building_name: str
+    building_address: str
+    building_city: str
+    building_state: str
+    building_zip: str
+    building_country: str
+    building_latitude: float
+    building_longitude: float
+
+class BuildingUpdateRequest(BaseModel):
+    building_name: Optional[str] = None
+    building_address: Optional[str] = None
+    building_city: Optional[str] = None
+    building_state: Optional[str] = None
+    building_zip: Optional[str] = None
+    building_country: Optional[str] = None
+    building_latitude: Optional[float] = None
+    building_longitude: Optional[float] = None
+
+class BuildingResponse(BaseModel):
+    building_id: int
+    building_name: str
+    building_address: str
+    building_city: str
+    building_state: str
+    building_zip: str
+    building_country: str
+    building_latitude: float
+    building_longitude: float

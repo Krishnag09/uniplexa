@@ -16,6 +16,11 @@ BASE_URL = "http://localhost:8000"
 TEST_PASSWORD = "test1234"
 TEST_BUILDING_ID = 1
 
+# Hardcoded admin user for building management tests
+# This user will be reused across test runs
+ADMIN_EMAIL = "admin@test.uniplexa.com"
+ADMIN_PASSWORD = "admin1234"
+
 # Generate randomized email addresses
 def generate_test_email(prefix: str = "test") -> str:
     """Generate a unique test email address with timestamp for better uniqueness"""
@@ -203,10 +208,17 @@ def test_get_request_status(request_id: int):
     print_response(response, f"GET /service-request/status/{request_id}")
     return response
 # 
-def test_get_all_requests():
-    """Test GET /service-request/all"""
-    response = requests.get(f"{BASE_URL}/service-request/all")
-    print_response(response, "GET /service-request/all")
+def test_get_all_requests(building_id: int = None):
+    """Test GET /service-request/all/{building_id}
+    
+    Args:
+        building_id: Optional building ID. If not provided, uses TEST_BUILDING_ID.
+    """
+    if building_id is None:
+        building_id = TEST_BUILDING_ID
+    
+    response = requests.get(f"{BASE_URL}/service-request/all/{building_id}")
+    print_response(response, f"GET /service-request/all/{building_id}")
     return response
 # 
 def test_patch_request(request_id: int):
@@ -533,6 +545,222 @@ def test_password_reset_with_token(email: str, token: str, old_password: str, ne
         print(f"❌ Password reset failed - cannot login with new password")
         return False
 
+def test_create_building(token: str = None, building_data: Dict[str, Any] = None):
+    """Test POST /buildings (Admin only)
+    
+    Args:
+        token: Admin authentication token (Bearer token)
+        building_data: Optional building data dict. If not provided, uses default test data.
+    
+    Returns:
+        dict: Response data with building_id and all building fields, or None if failed
+    """
+    if building_data is None:
+        building_data = {
+            "building_name": f"Test Building {int(time.time())}",
+            "building_address": "123 Test Street",
+            "building_city": "Test City",
+            "building_state": "TS",
+            "building_zip": "12345",
+            "building_country": "USA",
+            "building_latitude": 40.7128,
+            "building_longitude": -74.0060
+        }
+    
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    response = requests.post(f"{BASE_URL}/buildings", json=building_data, headers=headers)
+    print_response(response, "POST /buildings")
+    
+    if response.status_code == 200:
+        building_response = response.json()
+        building_id = building_response.get("building_id")
+        if building_id:
+            print(f"✅ Building created successfully with ID: {building_id}")
+            print(f"   Name: {building_response.get('building_name')}")
+            print(f"   Address: {building_response.get('building_address')}")
+            return building_response
+        else:
+            print(f"⚠️  Building created but building_id missing from response")
+            return building_response
+    elif response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    elif response.status_code == 403:
+        print(f"❌ Admin privileges required")
+    else:
+        print(f"❌ Failed to create building. Status code: {response.status_code}")
+    
+    return None
+
+def test_get_all_buildings():
+    """Test GET /buildings"""
+    response = requests.get(f"{BASE_URL}/buildings")
+    print_response(response, "GET /buildings")
+    
+    if response.status_code == 200:
+        buildings = response.json()
+        print(f"✅ Retrieved {len(buildings)} building(s)")
+        return buildings
+    else:
+        print(f"❌ Failed to retrieve buildings. Status code: {response.status_code}")
+        return None
+
+def test_get_building(building_id: int):
+    """Test GET /buildings/{building_id}"""
+    response = requests.get(f"{BASE_URL}/buildings/{building_id}")
+    print_response(response, f"GET /buildings/{building_id}")
+    
+    if response.status_code == 200:
+        building = response.json()
+        print(f"✅ Retrieved building: {building.get('building_name')}")
+        return building
+    elif response.status_code == 404:
+        print(f"❌ Building not found: {building_id}")
+    else:
+        print(f"❌ Failed to retrieve building. Status code: {response.status_code}")
+    
+    return None
+
+def test_update_building(building_id: int, token: str = None, update_data: Dict[str, Any] = None):
+    """Test PATCH /buildings/{building_id} (Admin only)
+    
+    Args:
+        building_id: ID of building to update
+        token: Admin authentication token (Bearer token)
+        update_data: Optional update data dict. If not provided, uses default test data.
+    
+    Returns:
+        dict: Updated building data, or None if failed
+    """
+    if update_data is None:
+        update_data = {
+            "building_name": f"Updated Building {int(time.time())}",
+            "building_city": "Updated City"
+        }
+    
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    response = requests.patch(
+        f"{BASE_URL}/buildings/{building_id}",
+        json=update_data,
+        headers=headers
+    )
+    print_response(response, f"PATCH /buildings/{building_id}")
+    
+    if response.status_code == 200:
+        building = response.json()
+        print(f"✅ Building updated successfully")
+        print(f"   Name: {building.get('building_name')}")
+        return building
+    elif response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    elif response.status_code == 403:
+        print(f"❌ Admin privileges required")
+    elif response.status_code == 404:
+        print(f"❌ Building not found: {building_id}")
+    else:
+        print(f"❌ Failed to update building. Status code: {response.status_code}")
+    
+    return None
+
+def test_delete_building(building_id: int, token: str = None):
+    """Test DELETE /buildings/{building_id} (Admin only)
+    
+    Args:
+        building_id: ID of building to delete
+        token: Admin authentication token (Bearer token)
+    
+    Returns:
+        bool: True if deletion successful, False otherwise
+    """
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    response = requests.delete(f"{BASE_URL}/buildings/{building_id}", headers=headers)
+    print_response(response, f"DELETE /buildings/{building_id}")
+    
+    if response.status_code == 200:
+        print(f"✅ Building deleted successfully")
+        return True
+    elif response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    elif response.status_code == 403:
+        print(f"❌ Admin privileges required")
+    elif response.status_code == 404:
+        print(f"❌ Building not found: {building_id}")
+    else:
+        print(f"❌ Failed to delete building. Status code: {response.status_code}")
+    
+    return False
+
+def test_building_crud_flow(admin_token: str):
+    """Test complete building CRUD flow:
+    1. Create building (admin)
+    2. Get all buildings
+    3. Get building by ID
+    4. Update building (admin)
+    5. Delete building (admin)
+    
+    Args:
+        admin_token: Admin authentication token
+    
+    Returns:
+        bool: True if all steps completed successfully
+    """
+    print(f"\n{'='*60}")
+    print(f"🏢 BUILDING CRUD FLOW TEST")
+    print(f"{'='*60}")
+    
+    # Step 1: Create building
+    print(f"\n📋 Step 1: Creating new building...")
+    building_data = test_create_building(token=admin_token)
+    
+    if not building_data or not building_data.get("building_id"):
+        print(f"❌ Failed to create building")
+        return False
+    
+    building_id = building_data.get("building_id")
+    
+    # Step 2: Get all buildings
+    print(f"\n📋 Step 2: Getting all buildings...")
+    all_buildings = test_get_all_buildings()
+    if all_buildings is None:
+        print(f"⚠️  Warning: Failed to get all buildings")
+    
+    # Step 3: Get building by ID
+    print(f"\n📋 Step 3: Getting building by ID...")
+    retrieved_building = test_get_building(building_id)
+    if not retrieved_building:
+        print(f"⚠️  Warning: Failed to retrieve building by ID")
+    
+    # Step 4: Update building
+    print(f"\n📋 Step 4: Updating building...")
+    updated_building = test_update_building(building_id, token=admin_token)
+    if not updated_building:
+        print(f"⚠️  Warning: Failed to update building")
+    
+    # Step 5: Delete building
+    print(f"\n📋 Step 5: Deleting building...")
+    deleted = test_delete_building(building_id, token=admin_token)
+    if not deleted:
+        print(f"⚠️  Warning: Failed to delete building")
+        return False
+    
+    # Verify deletion
+    print(f"\n📋 Step 6: Verifying building was deleted...")
+    verify_response = requests.get(f"{BASE_URL}/buildings/{building_id}")
+    if verify_response.status_code == 404:
+        print(f"✅ Building successfully deleted (verified)")
+        return True
+    else:
+        print(f"⚠️  Warning: Building may still exist after deletion")
+        return False
+
 def main():
     """Run all tests in sequence"""
     print("\n" + "="*60)
@@ -545,7 +773,8 @@ def main():
     new_user_email = generate_test_email("newuser")
     
     print(f"\n📧 Generated test email: {test_email}")
-    print(f"📧 Generated new user email: {new_user_email}\n")
+    print(f"📧 Generated new user email: {new_user_email}")
+    print(f"📧 Using hardcoded admin email: {ADMIN_EMAIL}\n")
     
     # Basic endpoint
     test_hello()
@@ -573,12 +802,76 @@ def main():
     
     if request_data and request_data.get("request_id"):
         request_id = request_data.get("request_id")
+        building_id = request_data.get("building_id", TEST_BUILDING_ID)
         test_get_request(request_id)
         test_get_request_status(request_id)
         test_patch_request(request_id)
         test_get_request(request_id)  # Get updated request
     
-    test_get_all_requests()
+    # Use building_id from created request if available, otherwise use default
+    test_building_id = request_data.get("building_id", TEST_BUILDING_ID) if request_data else TEST_BUILDING_ID
+    test_get_all_requests(building_id=test_building_id)
+    
+    # Building tests
+    print("\n" + "="*60)
+    print("BUILDING TESTS")
+    print("="*60)
+    
+    # Step 1: Try to login as admin (reuse existing admin user)
+    print(f"\n📋 Attempting to login as admin ({ADMIN_EMAIL})...")
+    admin_login_body = {
+        "email": ADMIN_EMAIL,
+        "password": ADMIN_PASSWORD
+    }
+    admin_login_response = requests.post(f"{BASE_URL}/login", json=admin_login_body)
+    
+    if admin_login_response.status_code == 200:
+        admin_token = admin_login_response.json().get("access_token")
+        print(f"✅ Admin login successful (reusing existing admin user)")
+    else:
+        # Step 2: Admin user doesn't exist, create it
+        print(f"⚠️  Admin user not found or login failed. Creating admin user...")
+        admin_register_body = {
+            "email": ADMIN_EMAIL,
+            "password": ADMIN_PASSWORD,
+            "role": "admin",
+            "building_id": None  # Admin may not need building_id
+        }
+        admin_register_response = requests.post(f"{BASE_URL}/register", json=admin_register_body)
+        if admin_register_response.status_code in [200, 409]:
+            print(f"✅ Admin user created/verified: {ADMIN_EMAIL}")
+            # Now try to login again
+            admin_login_response = requests.post(f"{BASE_URL}/login", json=admin_login_body)
+            if admin_login_response.status_code == 200:
+                admin_token = admin_login_response.json().get("access_token")
+                print(f"✅ Admin token obtained after creation")
+            else:
+                admin_token = None
+                print(f"⚠️  Warning: Could not get admin token after creation. Status: {admin_login_response.status_code}")
+        else:
+            admin_token = None
+            print(f"⚠️  Warning: Could not create admin user. Status: {admin_register_response.status_code}")
+            print(f"   Some building tests may fail.")
+    
+    # Step 3: Test building CRUD flow (requires admin)
+    if admin_token:
+        test_building_crud_flow(admin_token)
+    else:
+        print(f"⚠️  Skipping building CRUD flow (no admin token)")
+    
+    # Step 4: Test building endpoints without admin token (negative tests)
+    print(f"\n📋 Testing building creation without admin token (negative test - expects 401/403)...")
+    test_create_building(token=None)  # Should fail without token
+    
+    # Step 5: Test with non-admin token (negative test)
+    if token:  # Regular user token (not admin)
+        print(f"\n📋 Testing building creation with non-admin token (negative test - expects 403)...")
+        test_create_building(token=token)  # Should fail with 403
+    
+    # Step 6: Test public endpoints (no auth required)
+    print(f"\n📋 Testing public building endpoints...")
+    test_get_all_buildings()
+    test_get_building(1)  # Try to get building with ID 1 (may not exist)
     
     # # Other endpoints
     # test_agent_query()
@@ -611,6 +904,7 @@ def main():
     print("TESTING COMPLETE")
     print(f"Test email used: {test_email}")
     print(f"New user email used: {new_user_email}")
+    print(f"Admin email used: {ADMIN_EMAIL} (hardcoded, reused across runs)")
     print("\n💡 TIP: To test full password reset flow with token:")
     print(f"   1. Check server logs for the password reset token (look for 'Password reset link: ...')")
     print(f"   2. Extract the token from the URL")
