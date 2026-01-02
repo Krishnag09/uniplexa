@@ -166,7 +166,7 @@ def get_user_role(db: Session, user_id: int):
 # This function is used to add a new user to the database by admin/managers
 def add_user(db: Session, email: str, user_role: UserRole.renter = UserRole.renter, building_id: int = None):
     user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
-    data = {email: email, user_role: user_role, building_id: building_id}
+    data = {"email": email, "user_role": user_role, "building_id": building_id}
     if user:
         raise exceptions.EmailAlreadyRegisteredException
     new_user_time_delta = timedelta(minutes=NEW_USER_TOKEN_EXPIRE_MINUTES)
