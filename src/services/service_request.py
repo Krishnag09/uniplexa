@@ -1,14 +1,12 @@
 # src/auth/service.py
 
 import os
+
 import openai
 from dotenv import load_dotenv
-from sqlalchemy.orm import Session
 from openai import OpenAI
+from sqlalchemy.orm import Session
 
-from models import models
-from utils import utils
-from common import exceptions
 
 load_dotenv()
 

@@ -5,6 +5,10 @@ from contextlib import asynccontextmanager
 import logging
 from common.database import Base, engine
 from routers.router import router
+from routers.auth import router as auth_router
+from routers.service_requests import router as service_requests_router
+from routers.ai_voice import router as ai_voice_router
+from routers.buildings import router as buildings_router
 from config.config import config  # Import config system
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -34,23 +38,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve React's static files (CSS, JS, etc.)
-app.mount("/static", StaticFiles(directory="static/build/static"), name="static")
-
-# Serve React's index.html at the root
-@app.get("/")
-def serve_react():
-    return FileResponse("static/build/index.html")
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup logic: Initialize the database
-    create_tables()
-    yield  # Application runs after this
-    # Shutdown logic (if needed)
-    print("Shutting down...")
     
     
-# Include the auth router
-app.include_router(router)
+# Include routers
+app.include_router(router)  # Basic routes (e.g., /hello)
+app.include_router(auth_router)  # Authentication & user management
+app.include_router(service_requests_router)  # Service request CRUD
+app.include_router(ai_voice_router)  # AI & voice endpoints
+app.include_router(buildings_router)  # Building CRUD
 

@@ -1,7 +1,23 @@
 # src/auth/constants.py
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# User-related error messages
 USER_NOT_FOUND = "User not found"
 INCORRECT_PASSWORD = "Incorrect password"
 EMAIL_ALREADY_EXISTS = "Email already exists"
-OPEN_AI_TOKEN="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"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Token expiration times (can be overridden by environment variables)
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+NEW_USER_TOKEN_EXPIRE_MINUTES = int(os.getenv("NEW_USER_TOKEN_EXPIRE_MINUTES", "5"))
+PASSWORD_RESET_TIME = int(os.getenv("PASSWORD_RESET_TIME", "5"))
+
+# Links (can be overridden by environment variables)
+SIGN_UP_LINK = os.getenv("SIGN_UP_LINK", "https://example.com/set_password")
+PASSWORD_RESET_LINK = os.getenv("PASSWORD_RESET_LINK", "https://example.com/reset_password")
+
+# Note: OPENAI_API_KEY should be loaded from environment variables directly
+# Do not hardcode API keys in constants or any other files

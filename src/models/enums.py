@@ -9,6 +9,6 @@ class RequestStatus(str, Enum):  # Enum compatible with both Pydantic and SQLAlc
 
 
 class UserRole(str, Enum):  # Enum compatible with both Pydantic and SQLAlchemy
-    RENTER = "RENTER"
-    MANAGER = "MANAGER"
-    ADMIN = "ADMIN"
+    renter = "renter"
+    manager = "manager"
+    admin = "admin"
