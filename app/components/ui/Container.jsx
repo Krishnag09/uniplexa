@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Colors, ContainerSizes } from '@/constants/Theme';
+import { ContainerSizes } from '@/constants/Theme';
 
 /**
  * Reusable Container Component

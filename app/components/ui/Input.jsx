@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, StyleSheet } from 'react-native';
-import { Colors, Typography, BorderRadius, Spacing } from '@/constants/Theme';
+import { Colors, Typography, Spacing } from '@/constants/Theme';
 
 /**
  * Reusable Input Component

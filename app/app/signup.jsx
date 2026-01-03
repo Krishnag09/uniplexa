@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFonts, RedHatText_400Regular, RedHatText_700Bold } from '@expo-google-fonts/red-hat-text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Colors, Spacing } from '@/constants/Theme';
+import { Colors } from '@/constants/Theme';
 
 const { width, height } = Dimensions.get('window');
 
