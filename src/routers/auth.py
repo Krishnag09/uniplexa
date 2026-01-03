@@ -9,7 +9,6 @@ from models import models
 from schemas import schemas
 from schemas.schemas import validate_password_length
 from services import signup
-from utils import email_utils
 from utils.utils import get_current_user_dependency
 
 # Define the signup link base URL

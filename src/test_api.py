@@ -235,11 +235,11 @@ def test_patch_request(request_id: int):
     
     # Print detailed error if 422
     if response.status_code == 422:
-        print(f"\n⚠️  Validation Error Details:")
+        print("\n⚠️  Validation Error Details:")
         try:
             error_detail = response.json()
             print(json.dumps(error_detail, indent=2))
-        except:
+        except Exception:
             print(f"Raw response: {response.text}")
     
     return response
