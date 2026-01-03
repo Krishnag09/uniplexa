@@ -1,11 +1,9 @@
-import os
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from utils.utils import summarize_request, detect_category, get_date_time
 from common import database
-from config.config import config
 from models import models
 from schemas import schemas
 

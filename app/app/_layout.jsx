@@ -7,8 +7,22 @@ export default function RootLayout() {
 
   return (
     <>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="forgot-password" />
+        <Stack.Screen name="register-with-code" />
+        <Stack.Screen name="signup" />
+        <Stack.Screen name="onboarding-1" />
+        <Stack.Screen name="onboarding-2" />
+        <Stack.Screen name="onboarding-3" />
+        <Stack.Screen name="onboarding-4" />
+        <Stack.Screen name="onboarding-5" />
+        <Stack.Screen name="check-health" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
