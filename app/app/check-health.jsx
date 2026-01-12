@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFonts, RedHatText_400Regular, RedHatText_700Bold } from '@expo-google-fonts/red-hat-text';
 import { Button } from '@/components/ui/Button';
 import { Colors, Spacing } from '@/constants/Theme';
+import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
 
@@ -37,61 +38,67 @@ const CheckHealthScreen = () => {
         setHealthStatus(null);
         setConnectionStatus(null);
 
+        const startTime = Date.now();
+
         try {
             // TODO: Replace with your actual backend URL
             const backendUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
             const healthEndpoint = `${backendUrl}/health`;
-
-            const startTime = Date.now();
             
-            // Create AbortController for timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-            
-            // Check connection and health
-            const response = await fetch(healthEndpoint, {
-                method: 'GET',
+            // Check connection and health using axios
+            const response = await axios.get(healthEndpoint, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                signal: controller.signal,
+                timeout: 10000, // 10 second timeout
             });
-            
-            clearTimeout(timeoutId);
 
             const endTime = Date.now();
             const responseTime = endTime - startTime;
 
-            if (response.ok) {
-                const data = await response.json();
-                
-                setConnectionStatus({
-                    status: 'connected',
-                    responseTime: responseTime,
-                    statusCode: response.status,
-                });
+            setConnectionStatus({
+                status: 'connected',
+                responseTime: responseTime,
+                statusCode: response.status,
+            });
 
-                setHealthStatus({
-                    status: data.status || 'healthy',
-                    timestamp: data.timestamp || new Date().toISOString(),
-                    version: data.version,
-                    uptime: data.uptime,
-                    details: data,
-                });
-            } else {
+            setHealthStatus({
+                status: response.data.status || 'healthy',
+                timestamp: response.data.timestamp || new Date().toISOString(),
+                version: response.data.version,
+                uptime: response.data.uptime,
+                details: response.data,
+            });
+        } catch (err) {
+            const endTime = Date.now();
+            const responseTime = endTime - startTime;
+
+            if (err.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
                 setConnectionStatus({
                     status: 'error',
-                    statusCode: response.status,
+                    statusCode: err.response.status,
                     responseTime: responseTime,
                 });
-                setError(`Backend returned status ${response.status}`);
+                setError(`Backend returned status ${err.response.status}`);
+            } else if (err.request) {
+                // The request was made but no response was received
+                setConnectionStatus({
+                    status: 'disconnected',
+                    error: 'No response from server',
+                    responseTime: responseTime,
+                });
+                setError(`Connection failed: No response from server`);
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                setConnectionStatus({
+                    status: 'disconnected',
+                    error: err.message,
+                    responseTime: responseTime,
+                });
+                setError(`Connection failed: ${err.message}`);
             }
-        } catch (err) {
-            setConnectionStatus({
-                status: 'disconnected',
-                error: err.message,
-            });
-            setError(`Connection failed: ${err.message}`);
         } finally {
             setIsChecking(false);
             setLastChecked(new Date().toLocaleString());

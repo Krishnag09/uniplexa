@@ -89,6 +89,16 @@ const Dashboard = () => {
                             <Text style={styles.devButtonText}>Check Health</Text>
                         </TouchableOpacity>
                     </Link>
+                    <Link href="/check-email" asChild>
+                        <TouchableOpacity style={styles.devButton}>
+                            <Text style={styles.devButtonText}>Check Email</Text>
+                        </TouchableOpacity>
+                    </Link>
+                    <Link href="/add-user" asChild>
+                        <TouchableOpacity style={styles.devButton}>
+                            <Text style={styles.devButtonText}>Add User (Admin)</Text>
+                        </TouchableOpacity>
+                    </Link>
                     <TouchableOpacity 
                         style={[styles.devButton, styles.devButtonClose]}
                         onPress={() => setShowDevMenu(false)}

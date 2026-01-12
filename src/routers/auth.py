@@ -86,10 +86,20 @@ def add_user(
 @router.post("/login", response_model=schemas.UserLoginResponse)
 def login(user: schemas.UserLoginRequest, db: Session = Depends(database.get_db)):
     try:
+        print(f"Login attempt for email: {user.email}")
         db_user = signup.authenticate_user(
             db, email=user.email, password=user.password)
+        print(f"Login successful for email: {user.email}")
         return db_user
+    except HTTPException as he:
+        # Re-raise HTTPExceptions as-is (they already have proper status codes)
+        print(f"Login failed for email {user.email}: {he.detail} (status: {he.status_code})")
+        raise
     except Exception as e:
+        # Log the full exception for debugging
+        print(f"Login error for email {user.email}: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 

@@ -14,7 +14,10 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
+        <Stack.Screen name="login-password" />
+        <Stack.Screen name="check-email" />
         <Stack.Screen name="forgot-password" />
+        <Stack.Screen name="add-user" />
         <Stack.Screen name="register-with-code" />
         <Stack.Screen name="signup" />
         <Stack.Screen name="onboarding-1" />

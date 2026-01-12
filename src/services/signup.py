@@ -108,12 +108,19 @@ def create_user(db: Session, email: str, password: str, role=None, building_id=N
         raise HTTPException(status_code=400, detail=f"Unable to create user: {str(e)}") from e
 
 def authenticate_user(db, email: str, password: str):
+    # Normalize email (same as in create_user)
+    email_norm = email.strip().lower()
+    
     # Query the user from the database
-    user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
+    user = db.query(models.UserModel).filter(models.UserModel.email == email_norm).first()
 
     # Check if the user exists
     if not user:
         raise exceptions.UserNotFoundException
+
+    # Check if user has a password set
+    if not user.password:
+        raise HTTPException(status_code=400, detail="Password not set for this user. Please set your password first.")
 
     # Verify the password (using verify_password to ensure consistent truncation)
     if not verify_password(password, user.password):

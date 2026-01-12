@@ -1,45 +1,90 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, Dimensions, TouchableOpacity } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFonts, RedHatText_400Regular, RedHatText_700Bold } from '@expo-google-fonts/red-hat-text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Colors, Spacing } from '@/constants/Theme';
+import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
 
 const LoginScreen = () => {
     const router = useRouter();
+    const params = useLocalSearchParams();
+    
     const [fontsLoaded] = useFonts({
         RedHatText_400Regular,
         RedHatText_700Bold,
     });
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
+    
+    const [email, setEmail] = useState(params.email || '');
     const [emailError, setEmailError] = useState('');
-    const [passwordError, setPasswordError] = useState('');
-
+    const [isSendingLink, setIsSendingLink] = useState(false);
+    
+    useEffect(() => {
+        // Set email from params if provided
+        if (params.email) {
+            setEmail(params.email);
+        }
+    }, [params.email]);
+    
     if (!fontsLoaded) {
         return null;
     }
 
-    const handleLogin = () => {
-        // Basic validation
+    const handleUsePassword = () => {
+        // Navigate to password login screen
+        router.push({
+            pathname: '/login-password',
+            params: { email: email }
+        });
+    };
+
+    const handleSendMagicLink = async () => {
         if (!email) {
             setEmailError('Email is required');
             return;
         }
-        if (!password) {
-            setPasswordError('Password is required');
-            return;
-        }
         
-        // TODO: Add actual login logic
-        console.log('Login:', { email, password });
-        // router.push('/dashboard');
+        setEmailError('');
+        setIsSendingLink(true);
+        
+        try {
+            const backendUrl = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+            const forgotPasswordEndpoint = `${backendUrl}/forgot_password`;
+            
+            // Use forgot_password endpoint for magic link
+            await axios.post(forgotPasswordEndpoint, {
+                email: email
+            }, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            // Navigate to check-email screen
+            router.push({
+                pathname: '/check-email',
+                params: { email: email }
+            });
+        } catch (error) {
+            setIsSendingLink(false);
+            
+            let errorMessage = 'Failed to send sign-in link';
+            if (error.response) {
+                const errorData = error.response.data;
+                errorMessage = errorData?.detail || errorData?.message || 'Failed to send sign-in link';
+            } else if (error.request) {
+                errorMessage = 'Unable to connect to server. Please check your connection.';
+            } else {
+                errorMessage = error.message || 'Failed to send sign-in link';
+            }
+            
+            setEmailError(errorMessage);
+        }
     };
+
 
     return (
         <SafeAreaView style={styles.container}>
@@ -73,67 +118,24 @@ const LoginScreen = () => {
                         style={styles.input}
                     />
 
-                    {/* Password Input with Visibility Toggle */}
-                    <View style={styles.passwordContainer}>
-                        <Input
-                            placeholder="Enter password"
-                            value={password}
-                            onChangeText={(text) => {
-                                setPassword(text);
-                                setPasswordError('');
-                            }}
-                            error={passwordError}
-                            secureTextEntry={!showPassword}
-                            style={[styles.input, styles.passwordInput]}
-                        />
-                        <TouchableOpacity
-                            style={styles.eyeIcon}
-                            onPress={() => setShowPassword(!showPassword)}
-                        >
-                            <Ionicons
-                                name={showPassword ? 'eye-off' : 'eye'}
-                                size={20}
-                                color={Colors.textSecondary}
-                            />
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Forgot Password Link - Right Aligned */}
+                    {/* Use Password Instead Button */}
                     <TouchableOpacity 
-                        style={styles.forgotPassword}
-                        onPress={() => router.push('/forgot-password')}
+                        style={styles.toggleButton}
+                        onPress={handleUsePassword}
                     >
-                        <Text style={styles.forgotPasswordText}>
-                            Forgot password?
+                        <Text style={styles.toggleButtonText}>
+                            Use password instead
                         </Text>
                     </TouchableOpacity>
 
-                    {/* Continue Button */}
+                    {/* Primary CTA Button */}
                     <Button
-                        title="Continue"
-                        onPress={handleLogin}
+                        title="Send sign-in link"
+                        onPress={handleSendMagicLink}
                         variant="primary"
                         fullWidth
-                        style={styles.continueButton}
-                    />
-
-                    {/* Don't have an account section */}
-                    <TouchableOpacity 
-                        style={styles.registerPromptContainer}
-                        onPress={() => console.log('Register prompt clicked')}
-                    >
-                        <Text style={styles.registerPrompt}>
-                            Don't have an account?
-                        </Text>
-                    </TouchableOpacity>
-
-                    {/* Register with code Button */}
-                    <Button
-                        title="Register with code"
-                        onPress={() => router.push('/register-with-code')}
-                        variant="secondary"
-                        fullWidth
-                        style={[styles.registerButton, { backgroundColor: 'rgba(0, 180, 180, 1)' }]}
+                        loading={isSendingLink}
+                        style={styles.primaryButton}
                     />
                 </View>
             </View>
@@ -157,68 +159,40 @@ const styles = StyleSheet.create({
         width: 335,
         position: 'absolute',
         alignSelf: 'center',
-        top: 200, // Standardized positioning - lower to keep buttons in thumb zone
+        top: 200,
         justifyContent: 'flex-start',
-        alignItems: 'flex-start', // Align left for title
+        alignItems: 'flex-start',
         paddingHorizontal: 0,
     },
     loginTitle: {
         width: 335,
         height: 37,
-        textAlign: 'left', // Align left like in the design
-        color: 'rgba(255, 255, 255, 1)', // UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+        textAlign: 'left',
+        color: 'rgba(255, 255, 255, 1)',
         fontSize: 28,
-        lineHeight: 37.04, // Line height matches box height
-        fontFamily: 'RedHatText_400Regular', // RedHatText-SemiBold not available, using Regular with fontWeight
-        fontWeight: '700', // Bold weight
-        marginBottom: 24, // Spacing between title and first input
+        lineHeight: 37.04,
+        fontFamily: 'RedHatText_400Regular',
+        fontWeight: '700',
+        marginBottom: 24,
     },
     input: {
-        marginBottom: 16, // Spacing between inputs
-        width: 335, // Ensure inputs fit container
-    },
-    passwordContainer: {
-        width: 335,
-        position: 'relative',
         marginBottom: 16,
+        width: 335,
     },
-    passwordInput: {
-        paddingRight: 50, // Space for eye icon
-    },
-    eyeIcon: {
-        position: 'absolute',
-        right: 16,
-        top: 14.5, // Center vertically (49/2 - icon size/2)
-        zIndex: 1,
-    },
-    forgotPassword: {
-        alignSelf: 'flex-end', // Right aligned
-        marginTop: 8,
+    toggleButton: {
+        alignSelf: 'flex-start',
         marginBottom: 20,
+        paddingVertical: 4,
     },
-    forgotPasswordText: {
+    toggleButtonText: {
         color: Colors.textSecondary,
         fontSize: 14,
+        fontFamily: 'RedHatText_400Regular',
     },
-    continueButton: {
+    primaryButton: {
         marginTop: 0,
         marginBottom: 24,
         width: 335,
-    },
-    registerPromptContainer: {
-        width: 335,
-        marginBottom: 12,
-        alignItems: 'center',
-    },
-    registerPrompt: {
-        color: Colors.textPrimary,
-        fontSize: 14,
-        textAlign: 'center',
-        fontFamily: 'RedHatText_400Regular',
-    },
-    registerButton: {
-        width: 335,
-        marginBottom: 0,
     },
     backButton: {
         position: 'absolute',
@@ -236,4 +210,3 @@ const styles = StyleSheet.create({
 });
 
 export default LoginScreen;
-
