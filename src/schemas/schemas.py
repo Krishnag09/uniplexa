@@ -52,6 +52,15 @@ class UserForgotPasswordRequest(BaseModel):
 class UserForgotPasswordResponse(BaseModel):
     message: str
 
+class RequestSigninLinkRequest(BaseModel):
+    email: str
+
+class RequestSigninLinkResponse(BaseModel):
+    message: str
+
+class SigninWithLinkRequest(BaseModel):
+    token: str
+
 class AddUserRequest(BaseModel):
     email: str
     user_role: UserRole = UserRole.renter  # Default value

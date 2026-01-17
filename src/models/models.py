@@ -1,8 +1,9 @@
+from enum import Enum
 from sqlalchemy import Column, Date, Integer, String, Time, Float, ForeignKey
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.ext.declarative import declarative_base
 
-from .enums import RequestStatus, UserRole
+from .enums import RequestStatus, UserRole, UserStatus
 
 Base = declarative_base()
 
@@ -15,6 +16,7 @@ class UserModel(Base):  # SQLAlchemy model for users
     password = Column(String, nullable=True)  # Nullable till password is set
     role = Column(SqlEnum(UserRole), nullable=False)  # Use UserRole enum
     building_id = Column(Integer, ForeignKey("buildings.building_id"), nullable=True)  # Nullable for renters
+    status = Column(SqlEnum(UserStatus), nullable=False, default=UserStatus.active)
 
 class ServiceRequestModel(Base):  # SQLAlchemy model for service requests
     __tablename__ = "service_requests"
@@ -48,3 +50,10 @@ class BuildingModel(Base):  # SQLAlchemy model for buildings
     building_country = Column(String, nullable=False)
     building_latitude = Column(Float, nullable=False)
     building_longitude = Column(Float, nullable=False)
+
+class UserStatusModel(Base):  # SQLAlchemy model for user status
+    __tablename__ = "user_status"
+
+    status_id = Column(Integer, primary_key=True, index=True)
+    status = Column(SqlEnum(UserStatus), nullable=False, default=UserStatus.active)
+

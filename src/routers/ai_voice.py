@@ -12,6 +12,7 @@ from schemas import schemas
 from services import service_request as service
 from services import voice_methods
 from services import voice_methods as voice_service
+from utils.utils import get_current_user_dependency
 
 # this is static for testing purposes.
 AUDIO_DIR = os.path.join(config.base_dir, "audio")
@@ -21,7 +22,9 @@ router = APIRouter()
 
 
 @router.post("/agent/query")
-def open_ai_query():
+def open_ai_query(
+    current_user: models.UserModel = Depends(get_current_user_dependency)
+):
     try:
         response = service.open_ai_query()
         return {"answer": response}
@@ -30,23 +33,33 @@ def open_ai_query():
 
 
 @router.post("/voice-summary", response_model=schemas.ServiceRequest, description="returns request details for input voice")
-async def consume_voice_api(building_id: int, db: Session = Depends(database.get_db)):
-    audio_path = os.path.join(AUDIO_DIR, "LG-turbowash-audio.mp3")
-    
-    voice_to_text = voice_service.audio_to_text(audio_path)
-    print(f"Voice to Text: {voice_to_text}")
-    request_details = voice_service.summarize_message(voice_to_text)
-    
-    # Save the request details to the database
-    request_model = models.ServiceRequestModel(
-        request_title=request_details["request_title"], 
-        request_desc=request_details["request_desc"], 
-        request_category=request_details["request_category"], 
-        request_date=request_details["request_date"], 
-        request_time=request_details["request_time"], 
-        request_status=request_details["request_status"],
-        building_id=building_id
-    )
+async def consume_voice_api(
+    building_id: int, 
+    db: Session = Depends(database.get_db),
+    current_user: models.UserModel = Depends(get_current_user_dependency)
+):
+    try:
+        audio_path = os.path.join(AUDIO_DIR, "LG-turbowash-audio.mp3")
+        
+        voice_to_text = voice_service.audio_to_text(audio_path)
+        print(f"Voice to Text: {voice_to_text}")
+        request_details = voice_service.summarize_message(voice_to_text)
+        
+        # Save the request details to the database with user_id from token
+        request_model = models.ServiceRequestModel(
+            user_id=current_user.id,
+            request_title=request_details["request_title"], 
+            request_desc=request_details["request_desc"], 
+            request_category=request_details["request_category"], 
+            request_date=request_details["request_date"], 
+            request_time=request_details["request_time"], 
+            request_status=request_details["request_status"],
+            building_id=building_id
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     db.add(request_model)
     db.commit()
     db.refresh(request_model)

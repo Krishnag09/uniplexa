@@ -6,11 +6,13 @@ from typing import Optional
 
 import openai
 from dotenv import load_dotenv
-from fastapi import Depends, HTTPException, Header
+from fastapi import Depends, HTTPException, Header, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError
 from sqlalchemy.orm import Session
 
 from common import database
+from models import models
 from services import signup
 
 # Load environment variables from .env file
@@ -82,24 +84,26 @@ def get_date_time():
     return {"date": current_date, "time": current_time}
 
 
-def get_current_user_dependency(authorization: Optional[str] = Header(None), db: Session = Depends(database.get_db)):
+# HTTPBearer security scheme - automatically extracts Bearer token from Authorization header
+security = HTTPBearer()
+
+
+def get_current_user_dependency(
+    credentials: HTTPAuthorizationCredentials = Security(security),
+    db: Session = Depends(database.get_db)
+) -> models.UserModel:
     """
     Dependency to extract and validate JWT token from Authorization header.
     Returns the current authenticated user.
     Can be used as a FastAPI dependency in protected endpoints.
+    
+    This uses FastAPI's HTTPBearer which:
+    - Automatically extracts Bearer tokens from Authorization header
+    - Provides better error messages (401 with WWW-Authenticate header)
+    - Works seamlessly with iOS apps using Bearer token authentication
+    - Properly documents the API in OpenAPI/Swagger
     """
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Authorization header missing")
-    
-    # Extract token from "Bearer <token>" format
-    try:
-        scheme, token = authorization.split()
-        if scheme.lower() != "bearer":
-            raise HTTPException(status_code=401, detail="Invalid authentication scheme. Use 'Bearer'")
-    except ValueError:
-        raise HTTPException(status_code=401, detail="Invalid Authorization header format. Use 'Bearer <token>'")
-    
-    # Get current user from token
+    token = credentials.credentials
     return signup.get_current_user(token=token, db=db)
 
 def admin_role_dependency(token: str = Depends(signup.get_user_role)):

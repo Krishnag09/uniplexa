@@ -18,6 +18,7 @@ PASSWORD_RESET_TIME = int(os.getenv("PASSWORD_RESET_TIME", "5"))
 # Links (can be overridden by environment variables)
 SIGN_UP_LINK = os.getenv("SIGN_UP_LINK", "https://example.com/set_password")
 PASSWORD_RESET_LINK = os.getenv("PASSWORD_RESET_LINK", "https://example.com/reset_password")
+SIGNIN_LINK = os.getenv("SIGNIN_LINK", "https://example.com/signin")
 
 # Note: OPENAI_API_KEY should be loaded from environment variables directly
 # Do not hardcode API keys in constants or any other files

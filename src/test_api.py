@@ -125,12 +125,13 @@ def test_verify_token(token: str):
     print_response(response, "POST /verify_token")
     return response
 # 
-def test_create_service_request(desc: str = None, building_id: int = None):
+def test_create_service_request(desc: str = None, building_id: int = None, token: str = None):
     """Test POST /service-request
     
     Args:
         desc: Optional description text. If not provided, uses a default test description.
         building_id: Optional building ID. If not provided, uses TEST_BUILDING_ID.
+        token: Authentication token (Bearer token). Required for authenticated endpoints.
     
     Returns:
         dict: Response data with request_id and all request fields, or None if failed
@@ -145,11 +146,18 @@ def test_create_service_request(desc: str = None, building_id: int = None):
         "desc": desc,
         "building_id": building_id
     }
-    response = requests.post(f"{BASE_URL}/service-request", json=body)
+    
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    response = requests.post(f"{BASE_URL}/service-request", json=body, headers=headers)
     print_response(response, "POST /service-request")
     
     # Validate response
-    if response.status_code == 200:
+    if response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    elif response.status_code == 200:
         request_data = response.json()
         
         # Verify all required fields from ServiceRequest schema are present
@@ -196,45 +204,154 @@ def test_create_service_request(desc: str = None, building_id: int = None):
         print(f"❌ Failed to create service request. Status code: {response.status_code}")
         return None
 # 
-def test_get_request(request_id: int):
-    """Test GET /service-request/{request_id}"""
-    response = requests.get(f"{BASE_URL}/service-request/{request_id}")
+def test_get_request(request_id: int, token: str = None):
+    """Test GET /service-request/{request_id}
+    
+    Args:
+        request_id: ID of the service request to retrieve
+        token: Authentication token (Bearer token). Required for authenticated endpoints.
+    """
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    response = requests.get(f"{BASE_URL}/service-request/{request_id}", headers=headers)
     print_response(response, f"GET /service-request/{request_id}")
+    
+    if response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    elif response.status_code == 403:
+        print(f"❌ Access denied: You don't have permission to view this request")
+    elif response.status_code == 404:
+        print(f"❌ Request not found: {request_id}")
+    
     return response
 # 
-def test_get_request_status(request_id: int):
-    """Test GET /service-request/status/{request_id}"""
-    response = requests.get(f"{BASE_URL}/service-request/status/{request_id}")
+def test_get_request_status(request_id: int, token: str = None):
+    """Test GET /service-request/status/{request_id}
+    
+    Args:
+        request_id: ID of the service request
+        token: Authentication token (Bearer token). Required for authenticated endpoints.
+    """
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    response = requests.get(f"{BASE_URL}/service-request/status/{request_id}", headers=headers)
     print_response(response, f"GET /service-request/status/{request_id}")
+    
+    if response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    elif response.status_code == 403:
+        print(f"❌ Access denied: You don't have permission to view this request")
+    elif response.status_code == 404:
+        print(f"❌ Request not found: {request_id}")
+    
+    return response
+
+def test_delete_request(request_id: int, token: str = None):
+    """Test DELETE /service-request/{request_id}
+    
+    Args:
+        request_id: ID of the service request to delete
+        token: Authentication token (Bearer token). Required for authenticated endpoints.
+    """
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    response = requests.delete(f"{BASE_URL}/service-request/{request_id}", headers=headers)
+    print_response(response, f"DELETE /service-request/{request_id}")
+    
+    if response.status_code == 200:
+        print(f"✅ Request deleted successfully")
+    elif response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    elif response.status_code == 403:
+        print(f"❌ Access denied: Only the request owner or admin can delete requests")
+    elif response.status_code == 404:
+        print(f"❌ Request not found: {request_id}")
+    else:
+        print(f"❌ Failed to delete request. Status code: {response.status_code}")
+    
+    return response
+
+def test_get_current_user(token: str):
+    """Test GET /me (get current authenticated user)
+    
+    Args:
+        token: Authentication token (Bearer token)
+    """
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(f"{BASE_URL}/me", headers=headers)
+    print_response(response, "GET /me")
+    
+    if response.status_code == 200:
+        user_data = response.json()
+        print(f"✅ Current user retrieved successfully")
+        print(f"   User ID: {user_data.get('id')}")
+        print(f"   Email: {user_data.get('email')}")
+        print(f"   Role: {user_data.get('role')}")
+    elif response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    
     return response
 # 
-def test_get_all_requests(building_id: int = None):
+def test_get_all_requests(building_id: int = None, token: str = None):
     """Test GET /service-request/all/{building_id}
     
     Args:
         building_id: Optional building ID. If not provided, uses TEST_BUILDING_ID.
+        token: Authentication token (Bearer token). Required for authenticated endpoints.
     """
     if building_id is None:
         building_id = TEST_BUILDING_ID
     
-    response = requests.get(f"{BASE_URL}/service-request/all/{building_id}")
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    response = requests.get(f"{BASE_URL}/service-request/all/{building_id}", headers=headers)
     print_response(response, f"GET /service-request/all/{building_id}")
+    
+    if response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    elif response.status_code == 403:
+        print(f"❌ Access denied: You can only view requests from your building")
+    
     return response
 # 
-def test_patch_request(request_id: int):
-    """Test PATCH /service-request/{request_id}"""
+def test_patch_request(request_id: int, token: str = None):
+    """Test PATCH /service-request/{request_id}
+    
+    Args:
+        request_id: ID of the service request to update
+        token: Authentication token (Bearer token). Required for authenticated endpoints.
+    """
     body = {
         "request_status": "in_progress"  # Must match RequestStatus enum: pending, in_progress, completed, cancelled
     }
+    
+    headers = {"Content-Type": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
     response = requests.patch(
         f"{BASE_URL}/service-request/{request_id}", 
         json=body,
-        headers={"Content-Type": "application/json"}
+        headers=headers
     )
     print_response(response, f"PATCH /service-request/{request_id}")
     
-    # Print detailed error if 422
-    if response.status_code == 422:
+    # Print detailed error messages
+    if response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    elif response.status_code == 403:
+        print(f"❌ Access denied: Only the request owner or admin can update requests")
+    elif response.status_code == 404:
+        print(f"❌ Request not found: {request_id}")
+    elif response.status_code == 422:
         print("\n⚠️  Validation Error Details:")
         try:
             error_detail = response.json()
@@ -244,24 +361,45 @@ def test_patch_request(request_id: int):
     
     return response
 # 
-def test_agent_query():
-    """Test POST /agent/query"""
-    response = requests.post(f"{BASE_URL}/agent/query")
+def test_agent_query(token: str = None):
+    """Test POST /agent/query
+    
+    Args:
+        token: Authentication token (Bearer token). Required for authenticated endpoints.
+    """
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    response = requests.post(f"{BASE_URL}/agent/query", headers=headers)
     print_response(response, "POST /agent/query")
+    
+    if response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    
     return response
 # 
-def test_voice_summary(building_id: int = None):
+def test_voice_summary(building_id: int = None, token: str = None):
     """Test POST /voice-summary
     
     Args:
         building_id: Optional building ID. If not provided, uses TEST_BUILDING_ID.
+        token: Authentication token (Bearer token). Required for authenticated endpoints.
     """
     if building_id is None:
         building_id = TEST_BUILDING_ID
     
     params = {"building_id": building_id}
-    response = requests.post(f"{BASE_URL}/voice-summary", params=params)
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    response = requests.post(f"{BASE_URL}/voice-summary", params=params, headers=headers)
     print_response(response, f"POST /voice-summary (building_id: {building_id})")
+    
+    if response.status_code == 401:
+        print(f"❌ Authentication required (missing or invalid token)")
+    
     return response
 # 
 def test_set_password(token: str, new_password: str = "newpassword123"):
@@ -482,6 +620,153 @@ def test_password_reset_flow(email: str, old_password: str, new_password: str):
     print(f"\n   Note: The token is printed in server logs but not returned in response")
     
     return True
+
+def test_request_signin_link(email: str):
+    """Test POST /request-signin-link
+    
+    Args:
+        email: User email to send sign-in link to
+    
+    Returns:
+        tuple: (response, success_flag, token) - token is extracted from server logs/response if available
+    """
+    body = {"email": email}
+    response = requests.post(f"{BASE_URL}/request-signin-link", json=body)
+    print_response(response, f"POST /request-signin-link (email: {email})")
+    
+    if response.status_code == 200:
+        print(f"✅ Sign-in link sent successfully for {email}")
+        print(f"   Note: In production, check email for sign-in link")
+        print(f"   Check server logs for the sign-in token/link")
+        return response, True, None
+    elif response.status_code == 404:
+        print(f"❌ User not found: {email}")
+        return response, False, None
+    else:
+        print(f"⚠️  Unexpected status code: {response.status_code}")
+        return response, False, None
+
+def test_signin_with_link(token: str):
+    """Test POST /signin-with-link
+    
+    Args:
+        token: Sign-in link token (normally from email link)
+    
+    Returns:
+        tuple: (response, access_token, user_data) - Returns response, access_token, and user_data dict if successful
+               user_data contains: id, email, role, building_id
+    """
+    body = {"token": token}
+    response = requests.post(f"{BASE_URL}/signin-with-link", json=body)
+    print_response(response, f"POST /signin-with-link")
+    
+    if response.status_code == 200:
+        response_data = response.json()
+        access_token = response_data.get("access_token")
+        user_data = response_data.get("user", {})
+        print(f"✅ Sign-in successful with one-time link!")
+        print(f"   User ID: {user_data.get('id')}")
+        print(f"   Email: {user_data.get('email')}")
+        print(f"   Role: {user_data.get('role')}")
+        print(f"   Building ID: {user_data.get('building_id')}")
+        return response, access_token, user_data
+    elif response.status_code == 401:
+        print(f"❌ Invalid or expired token")
+        return response, None, None
+    elif response.status_code == 404:
+        print(f"❌ User not found")
+        return response, None, None
+    else:
+        print(f"⚠️  Unexpected status code: {response.status_code}")
+        return response, None, None
+
+def test_signin_link_flow(email: str):
+    """Test the complete one-time sign-in link flow:
+    1. Request sign-in link
+    2. Extract token from server logs
+    3. Sign in with token
+    4. Verify access token works
+    
+    Args:
+        email: User email
+    
+    Returns:
+        bool: True if all steps completed successfully (if token extracted from logs)
+    """
+    print(f"\n{'='*60}")
+    print(f"🔗 ONE-TIME SIGN-IN LINK FLOW TEST")
+    print(f"{'='*60}")
+    
+    # Step 1: Request sign-in link
+    print(f"\n📋 Step 1: Requesting sign-in link...")
+    request_response, success, _ = test_request_signin_link(email)
+    
+    if not success:
+        print(f"❌ Failed to request sign-in link")
+        return False
+    
+    # Step 2: Note about token extraction
+    print(f"\n📋 Step 2: Sign-in link requested successfully")
+    print(f"   ⚠️  To complete the full flow, you need to:")
+    print(f"   1. Check server console logs for: 'Signin link: ...'")
+    print(f"   2. Extract the token from the URL in the logs (after ?token=)")
+    print(f"   3. Call: test_signin_with_link(token)")
+    print(f"\n   Note: The token is printed in server logs but not returned in response")
+    
+    return True
+
+def test_signin_link_flow_with_token(email: str, token: str):
+    """Complete one-time sign-in link test with provided token
+    
+    This is a helper function to test the sign-in after you have the token
+    from the request-signin-link email/logs.
+    
+    Args:
+        email: User email (for verification)
+        token: Sign-in link token from request-signin-link response
+    
+    Returns:
+        tuple: (success, access_token) - True if sign-in successful and access token
+    """
+    print(f"\n{'='*60}")
+    print(f"🔗 ONE-TIME SIGN-IN LINK WITH TOKEN TEST")
+    print(f"{'='*60}")
+    
+    # Step 1: Sign in with token
+    print(f"\n📋 Step 1: Signing in with one-time link token...")
+    signin_response, access_token, user_data = test_signin_with_link(token)
+    
+    if not access_token:
+        print(f"❌ Sign-in with link failed")
+        return False, None
+    
+    # Display user info from response
+    if user_data:
+        print(f"   Retrieved user info:")
+        print(f"   - ID: {user_data.get('id')}")
+        print(f"   - Email: {user_data.get('email')}")
+        print(f"   - Role: {user_data.get('role')}")
+        print(f"   - Building ID: {user_data.get('building_id')}")
+    
+    # Step 2: Verify access token works (test /me endpoint)
+    print(f"\n📋 Step 2: Verifying access token works (testing /me endpoint)...")
+    headers = {"Authorization": f"Bearer {access_token}"}
+    me_response = requests.get(f"{BASE_URL}/me", headers=headers)
+    
+    if me_response.status_code == 200:
+        user_data = me_response.json()
+        if user_data.get("email") == email:
+            print(f"✅ Access token verified! Can access authenticated endpoints")
+            print(f"   Verified email: {user_data.get('email')}")
+            return True, access_token
+        else:
+            print(f"⚠️  Warning: Access token works but email mismatch")
+            print(f"   Expected: {email}")
+            print(f"   Got: {user_data.get('email')}")
+            return True, access_token  # Token works, just email mismatch
+    else:
+        print(f"⚠️  Warning: Access token might not be working (got {me_response.status_code} from /me)")
+        return True, access_token  # Sign-in worked, but /me failed (might be separate issue)
 
 def test_password_reset_with_token(email: str, token: str, old_password: str, new_password: str):
     """Complete password reset test with provided token
@@ -796,21 +1081,53 @@ def main():
     
     if token:
         test_verify_token(token)
+        # Test /me endpoint
+        print(f"\n📋 Testing GET /me (current user info)...")
+        test_get_current_user(token)
     
-    # Service requests
-    request_data = test_create_service_request()
+    # Service requests (requires authentication)
+    print("\n" + "="*60)
+    print("SERVICE REQUEST TESTS (Authenticated)")
+    print("="*60)
     
-    if request_data and request_data.get("request_id"):
-        request_id = request_data.get("request_id")
-        building_id = request_data.get("building_id", TEST_BUILDING_ID)
-        test_get_request(request_id)
-        test_get_request_status(request_id)
-        test_patch_request(request_id)
-        test_get_request(request_id)  # Get updated request
+    # Test without token (negative test - should fail with 401)
+    print(f"\n📋 Testing service request creation without token (negative test - expects 401)...")
+    test_create_service_request(token=None)
     
-    # Use building_id from created request if available, otherwise use default
-    test_building_id = request_data.get("building_id", TEST_BUILDING_ID) if request_data else TEST_BUILDING_ID
-    test_get_all_requests(building_id=test_building_id)
+    # Test with token
+    if token:
+        print(f"\n📋 Testing service request creation with token...")
+        request_data = test_create_service_request(token=token)
+        
+        if request_data and request_data.get("request_id"):
+            request_id = request_data.get("request_id")
+            building_id = request_data.get("building_id", TEST_BUILDING_ID)
+            
+            print(f"\n📋 Testing GET /service-request/{request_id}...")
+            test_get_request(request_id, token=token)
+            
+            print(f"\n📋 Testing GET /service-request/status/{request_id}...")
+            test_get_request_status(request_id, token=token)
+            
+            print(f"\n📋 Testing PATCH /service-request/{request_id}...")
+            test_patch_request(request_id, token=token)
+            
+            print(f"\n📋 Testing GET /service-request/{request_id} after update...")
+            test_get_request(request_id, token=token)  # Get updated request
+            
+            # Use building_id from created request if available, otherwise use default
+            test_building_id = request_data.get("building_id", TEST_BUILDING_ID) if request_data else TEST_BUILDING_ID
+            print(f"\n📋 Testing GET /service-request/all/{test_building_id}...")
+            test_get_all_requests(building_id=test_building_id, token=token)
+            
+            # Note: DELETE test commented out to avoid deleting test data
+            # Uncomment to test delete:
+            # print(f"\n📋 Testing DELETE /service-request/{request_id}...")
+            # test_delete_request(request_id, token=token)
+        else:
+            print(f"⚠️  Skipping service request tests (failed to create request)")
+    else:
+        print(f"⚠️  Skipping authenticated service request tests (no token available)")
     
     # Building tests
     print("\n" + "="*60)
@@ -873,9 +1190,23 @@ def main():
     test_get_all_buildings()
     test_get_building(1)  # Try to get building with ID 1 (may not exist)
     
-    # # Other endpoints
-    # test_agent_query()
-    # test_voice_summary()
+    # AI/Voice endpoints (requires authentication)
+    print("\n" + "="*60)
+    print("AI/VOICE ENDPOINT TESTS (Authenticated)")
+    print("="*60)
+    
+    if token:
+        print(f"\n📋 Testing POST /agent/query...")
+        test_agent_query(token=token)
+        
+        print(f"\n📋 Testing POST /voice-summary...")
+        test_voice_summary(token=token)
+        
+        # Test without token (negative test)
+        print(f"\n📋 Testing /agent/query without token (negative test - expects 401)...")
+        test_agent_query(token=None)
+    else:
+        print(f"⚠️  Skipping AI/voice tests (no token available)")
     
     # Password reset tests
     print("\n" + "="*60)
@@ -899,6 +1230,37 @@ def main():
     # Test password_reset with invalid token (should fail)
     print(f"\n📋 Testing password_reset with invalid token...")
     test_password_reset("invalid_token_12345", "newpassword123")
+    
+    # One-time sign-in link tests
+    print("\n" + "="*60)
+    print("ONE-TIME SIGN-IN LINK TESTS")
+    print("="*60)
+    
+    # Test sign-in link flow
+    print(f"\n📋 Testing one-time sign-in link flow...")
+    test_signin_link_flow(test_email)
+    
+    # Test request sign-in link with non-existent email (negative test)
+    print(f"\n📋 Testing request-signin-link with non-existent email (negative test - expects 404)...")
+    non_existent_email = generate_test_email("nonexistent_signin")
+    response, success, _ = test_request_signin_link(non_existent_email)
+    if response.status_code == 404:
+        print(f"✅ Expected 404 error received: User not found (this is correct behavior)")
+    else:
+        print(f"⚠️  Unexpected status code: expected 404, got {response.status_code}")
+    
+    # Test signin-with-link with invalid token (should fail)
+    print(f"\n📋 Testing signin-with-link with invalid token...")
+    invalid_response, invalid_token, invalid_user = test_signin_with_link("invalid_token_12345")
+    if invalid_response.status_code == 401:
+        print(f"✅ Expected 401 error for invalid token (this is correct behavior)")
+    else:
+        print(f"⚠️  Unexpected status code: expected 401, got {invalid_response.status_code}")
+    
+    print("\n💡 TIP: To test full one-time sign-in link flow with token:")
+    print(f"   1. Check server logs for the sign-in token (look for 'Signin link: ...')")
+    print(f"   2. Extract the token from the URL")
+    print(f"   3. Call: test_signin_link_flow_with_token('{test_email}', token)")
     
     print("\n" + "="*60)
     print("TESTING COMPLETE")

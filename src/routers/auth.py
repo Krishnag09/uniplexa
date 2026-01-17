@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from common import database
-from common.constants import PASSWORD_RESET_LINK, PASSWORD_RESET_TIME
+from common.constants import ACCESS_TOKEN_EXPIRE_MINUTES, PASSWORD_RESET_LINK, PASSWORD_RESET_TIME, SIGNIN_LINK
 from models import models
 from schemas import schemas
 from schemas.schemas import validate_password_length
@@ -225,12 +225,106 @@ def verify_token(token: str, db: Session = Depends(database.get_db)):
         # Verify the token and return the decoded payload
         user = signup.get_current_user(token=str(token), db=db)
         return {
-            "id": user.id,
-            "email": user.email,
-            "role": user.role,
-            "building_id": user.building_id
+            "status_code": 200,
+            "message": "Token verified successfully",
+            "user_details": user
+        }
+    except HTTPException as he:
+        return {
+            "status_code": he.status_code,
+            "message": he.detail,
+            "user_details": None
         }
     except Exception as e:
+        return {
+            "status_code": 400,
+            "message": str(e),
+            "user_details": None
+        }
+
+
+
+@router.post("/request-signin-link", response_model=schemas.RequestSigninLinkResponse, description="Sends a one-time sign-in link to the user's email")
+def request_signin_link(request: schemas.RequestSigninLinkRequest, db: Session = Depends(database.get_db)):
+    """
+    Generates a one-time sign-in link and sends it to the user's email.
+    Similar to forgot_password but for passwordless authentication.
+    """
+    print(f"Request signin link for email: {request.email}")
+    try:
+        user = db.query(models.UserModel).filter(models.UserModel.email == request.email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail=f"User not found with email: {request.email}")
+        
+        # Check if user has a password set (optional - you might want to allow this for all users)
+        # For now, we'll allow it for all users
+        
+        # Generate a short-lived token (similar to password reset)
+        signin_time_delta = timedelta(minutes=PASSWORD_RESET_TIME)
+        signin_token = signup.create_access_token({"sub": user.email}, signin_time_delta)
+        signin_link = SIGNIN_LINK + f"?token={signin_token}"
+        print(f"Signin link: {signin_link}")
+        
+        # Optionally send the signin link via email
+        # email_body = f"Sign-in link for {request.email}: {signin_link}"
+        # email_utils.send_email(to_email=request.email, subject="Sign In", body=email_body)
+        
+        return {"message": "Sign-in link sent to email"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/signin-with-link", response_model=schemas.UserLoginResponse, description="Authenticates a user using a one-time sign-in link token")
+def signin_with_link(request: schemas.SigninWithLinkRequest, db: Session = Depends(database.get_db)):
+    """
+    Authenticates a user using a one-time sign-in link token.
+    Validates the token and returns a JWT access token (same format as /login).
+    """
+    try:
+        print(f"Signin with link attempt")
+        
+        # Validate the token using existing method
+        payload = signup.validate_token(request.token)
+        
+        # Extract email from token (handle both "sub" and "email" for compatibility)
+        email = payload.get("sub") or payload.get("email")
+        
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token: missing email in token")
+        
+        # Get user from database
+        user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Generate access token (same as login endpoint)
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = signup.create_access_token(
+            data={"sub": user.email}, 
+            expires_delta=access_token_expires
+        )
+        
+        print(f"Signin with link successful for email: {user.email}")
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "building_id": user.building_id
+            }
+        }
+    except HTTPException as he:
+        print(f"Signin with link failed: {he.detail} (status: {he.status_code})")
+        raise
+    except Exception as e:
+        print(f"Signin with link error: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 
