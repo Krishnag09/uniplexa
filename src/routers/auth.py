@@ -165,7 +165,7 @@ def change_password(token: str, old_password: str, new_password: str, db: Sessio
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/forgot_password", response_model=schemas.UserForgotPasswordResponse, description="Sends a password reset link to the user's email")
+@router.post("/forgot_password", status_code=200,response_model=schemas.UserForgotPasswordResponse, description="Sends a password reset link to the user's email")
 def forgot_password(request: schemas.UserForgotPasswordRequest, db: Session = Depends(database.get_db)):
     print(f"Forgot password request: {request}")
     try:
