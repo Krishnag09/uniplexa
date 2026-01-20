@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Dimensions, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFonts, RedHatText_400Regular, RedHatText_700Bold } from '@expo-google-fonts/red-hat-text';
+import axios from 'axios';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Colors, Spacing } from '@/constants/Theme';
@@ -17,10 +18,71 @@ const ForgotPasswordScreen = () => {
 
     const [email, setEmail] = useState('');
     const [emailError, setEmailError] = useState('');
+    const [isSendingPasswordResetLink, setIsSendingPasswordResetLink] = useState(false);
 
     if (!fontsLoaded) {
         return null;
     }
+    const handleForgotPassword = async () => {
+        // Validate email
+        if (!email) {
+            setEmailError('Email is required');
+            return;
+        }
+        
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setEmailError('Please enter a valid email address');
+            return;
+        }
+        
+        setIsSendingPasswordResetLink(true);
+        setEmailError('');
+        
+        try {
+            const backendUrl = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+            const forgotPasswordEndpoint = `${backendUrl}/forgot_password`;
+            
+            console.log('Sending forgot password request to:', forgotPasswordEndpoint);
+            console.log('Email:', email);
+            
+            const response = await axios.post(forgotPasswordEndpoint, {
+                email: email
+            }, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            console.log('Password reset link sent successfully:', response.data);
+            setIsSendingPasswordResetLink(false);
+            
+            // Navigate to check-email screen
+            router.push({
+                pathname: '/check-email',
+                params: { email: email }
+            });
+        } catch (error) {
+            setIsSendingPasswordResetLink(false);
+            let errorMessage = 'Failed to send password reset link';
+            
+            if (error.response) {
+                const errorData = error.response.data;
+                errorMessage = errorData?.detail || errorData?.message || 'Failed to send password reset link';
+                console.error('Forgot password error response:', error.response.status, errorData);
+            } else if (error.request) {
+                errorMessage = 'Unable to connect to server. Please check your connection.';
+                console.error('Forgot password request error:', error.request);
+            } else {
+                errorMessage = error.message || 'An error occurred';
+                console.error('Forgot password error:', error);
+            }
+            
+            setEmailError(errorMessage);
+        }
+    }
+
 
     return (
         <SafeAreaView style={styles.container}>
@@ -66,15 +128,11 @@ const ForgotPasswordScreen = () => {
                     <Button
                         title="Continue"
                         onPress={() => {
-                            if (!email) {
-                                setEmailError('Email is required');
-                                return;
-                            }
-                            // TODO: Add forgot password logic
-                            console.log('Forgot password:', email);
+                            handleForgotPassword();
                         }}
                         variant="primary"
                         fullWidth
+                        loading={isSendingPasswordResetLink}
                         style={styles.continueButton}
                     />
                 </View>

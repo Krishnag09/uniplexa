@@ -52,10 +52,10 @@ const LoginScreen = () => {
         
         try {
             const backendUrl = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-            const forgotPasswordEndpoint = `${backendUrl}/forgot_password`;
+            const requestSigninLinkEndpoint = `${backendUrl}/request-signin-link`;
             
             // Use forgot_password endpoint for magic link
-            await axios.post(forgotPasswordEndpoint, {
+            await axios.post(requestSigninLinkEndpoint, {
                 email: email
             }, {
                 headers: {
@@ -130,7 +130,7 @@ const LoginScreen = () => {
 
                     {/* Primary CTA Button */}
                     <Button
-                        title="Send sign-in link"
+                        title="Send Sign-in Magic Link"
                         onPress={handleSendMagicLink}
                         variant="primary"
                         fullWidth
