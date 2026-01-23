@@ -93,6 +93,20 @@ const CheckEmailScreen = () => {
                         If that email exists, we sent a link. It expires in 15 minutes.
                     </Text>
 
+                    {/* Email used (so user can verify) */}
+                    {email ? (
+                        <View style={styles.emailRow}>
+                            <Text style={styles.emailLabel}>Link sent to</Text>
+                            <Text style={styles.emailValue} numberOfLines={1}>{email}</Text>
+                            <TouchableOpacity
+                                style={styles.changeEmailLink}
+                                onPress={() => router.replace('/forgot-password')}
+                            >
+                                <Text style={styles.changeEmailLinkText}>Change email</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : null}
+
                     {/* Open Mail App Button */}
                     <Button
                         title="Open mail app"
@@ -164,7 +178,36 @@ const styles = StyleSheet.create({
         fontSize: 16,
         lineHeight: 21.17,
         fontFamily: 'RedHatText_400Regular',
-        marginBottom: 32,
+        marginBottom: 20,
+    },
+    emailRow: {
+        width: 335,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        marginBottom: 24,
+        gap: 6,
+    },
+    emailLabel: {
+        color: 'rgba(255, 255, 255, 0.7)',
+        fontSize: 14,
+        fontFamily: 'RedHatText_400Regular',
+    },
+    emailValue: {
+        color: 'rgba(255, 255, 255, 1)',
+        fontSize: 14,
+        fontFamily: 'RedHatText_700Bold',
+        flex: 1,
+    },
+    changeEmailLink: {
+        paddingVertical: 4,
+        paddingHorizontal: 0,
+    },
+    changeEmailLinkText: {
+        color: Colors.textSecondary,
+        fontSize: 14,
+        fontFamily: 'RedHatText_400Regular',
+        textDecorationLine: 'underline',
     },
     primaryButton: {
         marginBottom: 16,
