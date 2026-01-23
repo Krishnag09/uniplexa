@@ -155,9 +155,5 @@ const styles = StyleSheet.create({
   fullWidth: {
     width: 335, // Button width from Figma
   },
-  
-  text: {
-    // Base text style
-  },
 });
 
