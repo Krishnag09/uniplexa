@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from common import database
@@ -9,6 +9,7 @@ from models import models
 from schemas import schemas
 from schemas.schemas import validate_password_length
 from services import signup
+from utils import email_utils
 from utils.utils import get_current_user_dependency
 
 # Define the signup link base URL
@@ -39,6 +40,7 @@ def register(user: schemas.UserCreateRequest, db: Session = Depends(database.get
 @router.post("/add_user", response_model=None, description="Adds a new user")
 def add_user(
     request: schemas.AddUserRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(database.get_db),
 ):
     try:
@@ -70,14 +72,13 @@ def add_user(
         signup_link = f"{SIGN_UP_LINK}?token={new_user_token}"
         print(f"Signup link for {email}: {signup_link}")
 
-        # Optionally send the signup link via email
-        # email_body = f"Signup link for {email}: {signup_link}"
-        # email_utils.send_email(to_email=email, subject="Complete Your Signup", body=email_body)
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
 
-        # Return the response
+        # Send signup email in background (never blocks or fails the request)
+        background_tasks.add_task(email_utils.send_signup_link_email, email, signup_link)
+
         return {"message": "User added successfully", "signup_link": signup_link}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -166,10 +167,13 @@ def change_password(token: str, old_password: str, new_password: str, db: Sessio
 
 
 @router.post("/forgot_password", status_code=200,response_model=schemas.UserForgotPasswordResponse, description="Sends a password reset link to the user's email")
-def forgot_password(request: schemas.UserForgotPasswordRequest, db: Session = Depends(database.get_db)):
-    print(f"Forgot password request: {request}")
+def forgot_password(
+    request: schemas.UserForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(database.get_db),
+):
     try:
-        print(f"Forgot password request with email : {request.email}")
+        print(f"Forgot password request with email: {request.email}")
         user = db.query(models.UserModel).filter(models.UserModel.email == request.email).first()
         if not user:
             raise HTTPException(status_code=404, detail=f"User not found with email: {request.email}")
@@ -177,8 +181,10 @@ def forgot_password(request: schemas.UserForgotPasswordRequest, db: Session = De
         password_reset_token = signup.create_access_token({"sub": user.email}, new_user_time_delta)
         password_reset_link = PASSWORD_RESET_LINK + f"?token={password_reset_token}"
         print(f"Password reset link: {password_reset_link}")
-        # email_body = f"Password reset link for {request.email}: {password_reset_link}"
-        # email_utils.send_email(to_email=request.email, subject="Password Reset", body=email_body)
+
+        # Send reset email in background (never blocks or fails the request)
+        background_tasks.add_task(email_utils.send_password_reset_email, request.email, password_reset_link)
+
         return {"message": "Password reset link sent to email"}
     except HTTPException:
         raise
@@ -245,7 +251,11 @@ def verify_token(token: str, db: Session = Depends(database.get_db)):
 
 
 @router.post("/request-signin-link", response_model=schemas.RequestSigninLinkResponse, description="Sends a one-time sign-in link to the user's email")
-def request_signin_link(request: schemas.RequestSigninLinkRequest, db: Session = Depends(database.get_db)):
+def request_signin_link(
+    request: schemas.RequestSigninLinkRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(database.get_db),
+):
     """
     Generates a one-time sign-in link and sends it to the user's email.
     Similar to forgot_password but for passwordless authentication.
@@ -256,19 +266,14 @@ def request_signin_link(request: schemas.RequestSigninLinkRequest, db: Session =
         if not user:
             raise HTTPException(status_code=404, detail=f"User not found with email: {request.email}")
         
-        # Check if user has a password set (optional - you might want to allow this for all users)
-        # For now, we'll allow it for all users
-        
-        # Generate a short-lived token (similar to password reset)
         signin_time_delta = timedelta(minutes=PASSWORD_RESET_TIME)
         signin_token = signup.create_access_token({"sub": user.email}, signin_time_delta)
         signin_link = SIGNIN_LINK + f"?token={signin_token}"
         print(f"Signin link: {signin_link}")
-        
-        # Optionally send the signin link via email
-        # email_body = f"Sign-in link for {request.email}: {signin_link}"
-        # email_utils.send_email(to_email=request.email, subject="Sign In", body=email_body)
-        
+
+        # Send sign-in link email in background (never blocks or fails the request)
+        background_tasks.add_task(email_utils.send_signin_link_email, request.email, signin_link)
+
         return {"message": "Sign-in link sent to email"}
     except HTTPException:
         raise
