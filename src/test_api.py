@@ -5,6 +5,7 @@ Usage: python test_api.py
 
 import requests
 import json
+import random
 import uuid
 import time
 from typing import Dict, Any
@@ -20,6 +21,22 @@ TEST_BUILDING_ID = 1
 # This user will be reused across test runs
 ADMIN_EMAIL = "admin@test.uniplexa.com"
 ADMIN_PASSWORD = "admin1234"
+
+# Base email used for add_user / set_password flow.
+# The script will automatically generate: thekrishnagaurav+X@gmail.com (random X)
+ADD_USER_EMAIL_BASE = "thekrishnagaurav@gmail.com"
+
+
+def gmail_plus_alias(base_email: str) -> str:
+    """
+    Convert 'name@gmail.com' -> 'name+X@gmail.com' with random X.
+    Useful for testing without creating new inboxes.
+    """
+    local, sep, domain = base_email.partition("@")
+    if not sep:
+        return base_email
+    x = random.randint(1, 999999)
+    return f"{local}+{x}@{domain}"
 
 # Generate randomized email addresses
 def generate_test_email(prefix: str = "test") -> str:
@@ -1052,13 +1069,12 @@ def main():
     print("UNIPLEXA API END-TO-END TESTING")
     print("="*60)
     
-    # Generate randomized emails once at the start for consistency
-    # Using timestamp ensures uniqueness even across multiple runs
+    # Generate randomized email for main test user; use a Gmail +X alias for add_user flow
     test_email = generate_test_email("testuser")
-    new_user_email = generate_test_email("newuser")
+    new_user_email = gmail_plus_alias(ADD_USER_EMAIL_BASE)
     
     print(f"\n📧 Generated test email: {test_email}")
-    print(f"📧 Generated new user email: {new_user_email}")
+    print(f"📧 Add user / set_password flow email: {new_user_email}")
     print(f"📧 Using hardcoded admin email: {ADMIN_EMAIL}\n")
     
     # Basic endpoint

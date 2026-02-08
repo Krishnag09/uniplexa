@@ -4,16 +4,13 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from common import database
-from common.constants import ACCESS_TOKEN_EXPIRE_MINUTES, PASSWORD_RESET_LINK, PASSWORD_RESET_TIME, SIGNIN_LINK
+from common.constants import ACCESS_TOKEN_EXPIRE_MINUTES, PASSWORD_RESET_LINK, PASSWORD_RESET_TIME, SIGNIN_LINK, SIGN_UP_LINK
 from models import models
 from schemas import schemas
 from schemas.schemas import validate_password_length
 from services import signup
 from utils import email_utils
 from utils.utils import get_current_user_dependency
-
-# Define the signup link base URL
-SIGN_UP_LINK = "https://example.com/signup"
 
 # Define the expiration time for new user tokens
 NEW_USER_TOKEN_EXPIRE_MINUTES = 30
@@ -263,8 +260,10 @@ def request_signin_link(
     print(f"Request signin link for email: {request.email}")
     try:
         user = db.query(models.UserModel).filter(models.UserModel.email == request.email).first()
+        # Avoid leaking whether an email exists (and matches your "check your email" UX).
+        # If the user doesn't exist, we still return 200, but we won't send an email.
         if not user:
-            raise HTTPException(status_code=404, detail=f"User not found with email: {request.email}")
+            return {"message": "Sign-in link sent to email"}
         
         signin_time_delta = timedelta(minutes=PASSWORD_RESET_TIME)
         signin_token = signup.create_access_token({"sub": user.email}, signin_time_delta)
