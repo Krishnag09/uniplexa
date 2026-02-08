@@ -138,7 +138,6 @@ const LoginPasswordScreen = () => {
                         }}
                         error={emailError}
                         keyboardType="email-address"
-                        autoCapitalize="none"
                         style={styles.input}
                     />
 
