@@ -13,11 +13,14 @@ load_dotenv(_ENV_PATH)
 
 
 class Config:
-    def __init__(self, config_file="config.json"):
+    def __init__(self, config_file=None):
         # Locate the JSON file relative to this script's directory
         self._base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if config_file is None:
+            config_file = os.getenv("CONFIG_FILE", "config.json")
         config_path = os.path.join(self.base_dir, "config", config_file)
-        
+        if not os.path.isfile(config_path):
+            config_path = os.path.join(self.base_dir, "config", "config.json")
         # Load the JSON config file
         with open(config_path, "r") as file:
             self.config_data = json.load(file)

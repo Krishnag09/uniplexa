@@ -63,6 +63,16 @@ const Dashboard = () => {
                             <Text style={styles.devButtonText}>Go to Login</Text>
                         </TouchableOpacity>
                     </Link>
+                    <Link href="/dashboard" asChild>
+                        <TouchableOpacity style={styles.devButton}>
+                            <Text style={styles.devButtonText}>Go to Dashboard</Text>
+                        </TouchableOpacity>
+                    </Link>
+                    <Link href="/voice-record" asChild>
+                        <TouchableOpacity style={styles.devButton}>
+                            <Text style={styles.devButtonText}>Voice Record</Text>
+                        </TouchableOpacity>
+                    </Link>
                     <TouchableOpacity 
                         style={styles.devButton}
                         onPress={() => router.push('/forgot-password')}

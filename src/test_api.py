@@ -1289,5 +1289,40 @@ def main():
     print(f"   3. Call: test_password_reset_with_token('{test_email}', token, '{TEST_PASSWORD}', 'newpassword')")
     print("="*60)
 
+def run_signup_link_only():
+    """Run only add_user and print the signup link for testing the app deep link.
+    Usage: python test_api.py --signup-link-only
+    Start the API with CONFIG_FILE=config.test.json so the link is uniplexa://set-password?token=...
+    """
+    new_user_email = gmail_plus_alias(ADD_USER_EMAIL_BASE)
+    print("\n" + "="*60)
+    print("SIGNUP LINK ONLY (for app deep-link testing)")
+    print("="*60)
+    print(f"Email: {new_user_email}\n")
+    test_hello()
+    add_response, token = test_add_user(new_user_email)
+    if add_response.status_code != 200:
+        print("Failed to add user. Is the API running with CONFIG_FILE=config.test.json?")
+        return
+    try:
+        signup_link = add_response.json().get("signup_link", "")
+        print("\n" + "="*60)
+        print("COPY THIS LINK TO OPEN IN THE APP")
+        print("="*60)
+        print(signup_link)
+        print("="*60)
+        print("\nHow to open:")
+        print("  • Physical device: Paste the link in Notes or Messages, then tap it.")
+        print("  • iOS Simulator: Run in terminal: xcrun simctl open url \"" + signup_link + "\"")
+        print("  • Or paste in Safari address bar and go.")
+        print()
+    except Exception as e:
+        print(f"Could not get signup_link: {e}")
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--signup-link-only" in sys.argv:
+        run_signup_link_only()
+    else:
+        main()

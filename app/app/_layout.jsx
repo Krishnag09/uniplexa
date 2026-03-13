@@ -15,6 +15,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="login-password" />
+        <Stack.Screen name="set-password" />
         <Stack.Screen name="check-email" />
         <Stack.Screen name="forgot-password" />
         <Stack.Screen name="add-user" />
@@ -26,6 +27,8 @@ export default function RootLayout() {
         <Stack.Screen name="onboarding-4" />
         <Stack.Screen name="onboarding-5" />
         <Stack.Screen name="check-health" />
+        <Stack.Screen name="dashboard" />
+        <Stack.Screen name="voice-record" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

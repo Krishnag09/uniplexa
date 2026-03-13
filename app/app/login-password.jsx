@@ -57,11 +57,8 @@ const LoginPasswordScreen = () => {
             
             setLoginError(null);
             setIsLoading(false);
-            
-            // TODO: Store token and navigate to dashboard
-            console.log('Login successful:', response.data);
-            // router.push('/dashboard');
-            
+            // Navigate to dashboard on success (for local testing without magic links)
+            router.replace('/dashboard');
             return response.data;
         } catch (error) {
             setIsLoading(false);

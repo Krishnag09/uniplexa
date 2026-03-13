@@ -1,0 +1,13 @@
+{
+  "ALGORITHM": "HS256",
+  "ACCESS_TOKEN_EXPIRE_MINUTES": 30,
+  "DATABASE_URL": "sqlite:///./test.db",
+  "BASE_URL": "http://localhost:8000",
+  "SMTP_SERVER": "smtp.gmail.com",
+  "SMTP_PORT": 465,
+  "SIGN_UP_LINK": "uniplexa://set-password",
+  "PASSWORD_RESET_LINK": "http://localhost:3000/reset_password",
+  "SIGNIN_LINK": "http://localhost:3000/signin",
+  "PASSWORD_RESET_TIME": 5,
+  "NEW_USER_TOKEN_EXPIRE_MINUTES": 30
+}
