@@ -1,12 +1,11 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { AuthProvider } from '@/context/AuthContext';
 
 export default function RootLayout() {
-
-
   return (
-    <>
+    <AuthProvider>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -28,11 +27,14 @@ export default function RootLayout() {
         <Stack.Screen name="onboarding-5" />
         <Stack.Screen name="check-health" />
         <Stack.Screen name="dashboard" />
+        <Stack.Screen name="buildings" />
+        <Stack.Screen name="building-detail" />
+        <Stack.Screen name="building-create" />
+        <Stack.Screen name="building-edit" />
         <Stack.Screen name="voice-record" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
-    </>
-
+    </AuthProvider>
   );
 }

@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
 import { useFonts, RedHatText_400Regular, RedHatText_700Bold } from '@expo-google-fonts/red-hat-text';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -37,6 +38,7 @@ const getGreeting = () => {
 
 const DashboardScreen = () => {
   const router = useRouter();
+  const { isAdmin } = useAuth();
   const [showDevMenu, setShowDevMenu] = useState(__DEV__);
   const [fontsLoaded] = useFonts({
     RedHatText_400Regular,
@@ -83,6 +85,17 @@ const DashboardScreen = () => {
         <View style={styles.promptBox}>
           <Text style={styles.promptText}>What would you like to do today?</Text>
         </View>
+
+        {isAdmin ? (
+          <TouchableOpacity
+            style={styles.adminBanner}
+            activeOpacity={0.85}
+            onPress={() => router.push('/buildings')}
+          >
+            <Text style={styles.adminBannerText}>Manage buildings</Text>
+            <Ionicons name="business-outline" size={22} color="#1A1A1A" />
+          </TouchableOpacity>
+        ) : null}
 
         {/* Action cards - horizontal scroll */}
         <View style={styles.actionCardsContainer}>
@@ -283,6 +296,21 @@ const styles = StyleSheet.create({
     color: DASHBOARD_COLORS.promptText,
     fontSize: 16,
     fontFamily: 'RedHatText_400Regular',
+  },
+  adminBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: DASHBOARD_COLORS.actionCard,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 20,
+  },
+  adminBannerText: {
+    color: '#1A1A1A',
+    fontSize: 16,
+    fontFamily: 'RedHatText_700Bold',
   },
   actionCardsContainer: {
     flexDirection: 'row',

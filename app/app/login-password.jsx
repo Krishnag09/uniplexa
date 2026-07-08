@@ -6,12 +6,14 @@ import { useFonts, RedHatText_400Regular, RedHatText_700Bold } from '@expo-googl
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Colors, Spacing } from '@/constants/Theme';
+import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
 
 const LoginPasswordScreen = () => {
     const router = useRouter();
+    const { setSession } = useAuth();
     const params = useLocalSearchParams();
     
     const [fontsLoaded] = useFonts({
@@ -57,7 +59,7 @@ const LoginPasswordScreen = () => {
             
             setLoginError(null);
             setIsLoading(false);
-            // Navigate to dashboard on success (for local testing without magic links)
+            await setSession(response.data);
             router.replace('/dashboard');
             return response.data;
         } catch (error) {
