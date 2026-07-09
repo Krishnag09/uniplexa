@@ -93,6 +93,23 @@ The application loads configuration in this order (highest priority first):
 2. `config.json` file (for non-sensitive defaults)
 3. Hardcoded defaults (only for non-sensitive values)
 
+### Email service (SMTP)
+
+The app sends transactional emails for **signup links** (`add_user`), **password reset** (`forgot_password`), and **sign-in links** (`request-signin-link`). Emails are sent in the background via FastAPI `BackgroundTasks` and never block or fail the API response.
+
+**Required for email:** `SMTP_USERNAME`, `SMTP_PASSWORD`. Optional: `SMTP_SERVER` (default `smtp.hostinger.com`), `SMTP_PORT` (default `465`).
+
+**Common providers:**
+
+| Provider       | SMTP_SERVER           | SMTP_PORT | Notes                                                |
+|----------------|-----------------------|-----------|------------------------------------------------------|
+| Gmail          | `smtp.gmail.com`      | `587`     | Use an [App Password](https://myaccount.google.com/apppasswords), not your normal password |
+| Hostinger      | `smtp.hostinger.com`  | `465`     | Default in config                                    |
+| SendGrid       | `smtp.sendgrid.net`   | `587`     | Username `apikey`, password = API key                |
+| Mailgun        | `smtp.mailgun.org`    | `587`     | Use SMTP credentials from Mailgun dashboard          |
+
+If SMTP is not configured, those endpoints still succeed; the app logs a warning and skips sending. Set `SIGN_UP_LINK`, `PASSWORD_RESET_LINK`, and `SIGNIN_LINK` (in env) to the **frontend URLs** where users land when they click the links in the emails (e.g. your Expo / web app deep links).
+
 ---
 
 ## 3. Install Poetry Shell Plugin (Optional but Recommended)

@@ -10,7 +10,7 @@ const { width, height } = Dimensions.get('window');
  */
 export const BackgroundPattern = () => {
   // Form area is centered, 335px wide
-  const formCenterX = width / 2;
+  // Removed unused variable formCenterX
   const formCenterY = height / 2;
   const formWidth = 335;
   const formPadding = 50; // Extra padding to avoid form area

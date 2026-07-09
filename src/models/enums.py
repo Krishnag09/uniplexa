@@ -12,3 +12,8 @@ class UserRole(str, Enum):  # Enum compatible with both Pydantic and SQLAlchemy
     renter = "renter"
     manager = "manager"
     admin = "admin"
+
+class UserStatus(str, Enum):  # Enum compatible with both Pydantic and SQLAlchemy
+    active = "active"
+    pending = "pending"
+    rejected = "rejected"

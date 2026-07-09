@@ -52,6 +52,15 @@ class UserForgotPasswordRequest(BaseModel):
 class UserForgotPasswordResponse(BaseModel):
     message: str
 
+class RequestSigninLinkRequest(BaseModel):
+    email: str
+
+class RequestSigninLinkResponse(BaseModel):
+    message: str
+
+class SigninWithLinkRequest(BaseModel):
+    token: str
+
 class AddUserRequest(BaseModel):
     email: str
     user_role: UserRole = UserRole.renter  # Default value
@@ -134,14 +143,15 @@ class SetPasswordRequest(BaseModel):
 
 # Building schemas
 class BuildingCreateRequest(BaseModel):
-    building_name: str
-    building_address: str
-    building_city: str
-    building_state: str
-    building_zip: str
-    building_country: str
-    building_latitude: float
-    building_longitude: float
+    place_id: Optional[str] = None  # Google Place ID (optional - if provided, will fetch details from Google)
+    building_name: Optional[str] = None  # Optional if place_id provided
+    building_address: Optional[str] = None
+    building_city: Optional[str] = None
+    building_state: Optional[str] = None
+    building_zip: Optional[str] = None
+    building_country: Optional[str] = None
+    building_latitude: Optional[float] = None
+    building_longitude: Optional[float] = None
 
 class BuildingUpdateRequest(BaseModel):
     building_name: Optional[str] = None
@@ -155,6 +165,7 @@ class BuildingUpdateRequest(BaseModel):
 
 class BuildingResponse(BaseModel):
     building_id: int
+    place_id: Optional[str] = None
     building_name: str
     building_address: str
     building_city: str

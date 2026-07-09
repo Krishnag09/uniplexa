@@ -16,9 +16,16 @@ export const Input = ({
   disabled = false,
   style,
   inputStyle,
+  keyboardType,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const isEmailField = keyboardType === 'email-address';
+
+  const handleChangeText = (text) => {
+    const finalText = isEmailField ? text.toLowerCase() : text;
+    onChangeText?.(finalText);
+  };
 
   return (
     <View style={[styles.container, style]}>
@@ -34,11 +41,14 @@ export const Input = ({
         placeholder={placeholder}
         placeholderTextColor={Colors.textSecondary}
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={handleChangeText}
         secureTextEntry={secureTextEntry}
         editable={!disabled}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
+        keyboardType={keyboardType}
+        autoCapitalize={isEmailField ? 'none' : undefined}
+        autoCorrect={isEmailField ? false : undefined}
         {...props}
       />
       {error && <Text style={styles.errorText}>{error}</Text>}

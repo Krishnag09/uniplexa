@@ -5,9 +5,9 @@
   "BASE_URL": "http://localhost:8000",
   "SMTP_SERVER": "smtp.gmail.com",
   "SMTP_PORT": 465,
-  "SIGN_UP_LINK": "https://uniplexa.com/set_password",
-  "PASSWORD_RESET_LINK": "https://uniplexa.com/reset_password",
-  "SIGNIN_LINK": "https://uniplexa.com/signin",
+  "SIGN_UP_LINK": "uniplexa://set-password",
+  "PASSWORD_RESET_LINK": "http://localhost:3000/reset_password",
+  "SIGNIN_LINK": "http://localhost:3000/signin",
   "PASSWORD_RESET_TIME": 5,
-  "NEW_USER_TOKEN_EXPIRE_MINUTES": 5
+  "NEW_USER_TOKEN_EXPIRE_MINUTES": 30
 }

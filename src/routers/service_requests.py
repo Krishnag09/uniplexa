@@ -2,16 +2,21 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from utils.utils import summarize_request, detect_category, get_date_time
+from utils.utils import summarize_request, detect_category, get_date_time, get_current_user_dependency
 from common import database
 from models import models
 from schemas import schemas
+from models.enums import UserRole
 
 router = APIRouter()
 
 
 @router.post("/service-request", response_model=schemas.ServiceRequest, description="details form the issue description")
-def create_request(request: schemas.Summary, db: Session = Depends(database.get_db)):
+def create_request(
+    request: schemas.Summary, 
+    db: Session = Depends(database.get_db),
+    current_user: models.UserModel = Depends(get_current_user_dependency)
+):
     try:
         request_description = request.desc
         building_id = request.building_id
@@ -20,7 +25,9 @@ def create_request(request: schemas.Summary, db: Session = Depends(database.get_
         request_date_time = get_date_time()
         request_status = schemas.RequestStatus.pending
         
+        # Automatically set user_id from authenticated user
         request_model = models.ServiceRequestModel(
+            user_id=current_user.id,
             request_desc=request_description, 
             request_title=request_title, 
             request_date=request_date_time["date"], 
@@ -50,38 +57,102 @@ def create_request(request: schemas.Summary, db: Session = Depends(database.get_
 
 
 @router.get("/service-request/{request_id}", response_model=schemas.ServiceRequest, description="Returns request details for the given request ID")
-def get_request(request_id: int, db: Session = Depends(database.get_db)):
+def get_request(
+    request_id: int, 
+    db: Session = Depends(database.get_db),
+    current_user: models.UserModel = Depends(get_current_user_dependency)
+):
     try:
         request = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
         if not request:
             raise HTTPException(status_code=404, detail="Request not found")
+        
+        # Check if user has access: owner, admin, or same building
+        if (request.user_id != current_user.id and 
+            current_user.role != UserRole.admin and 
+            request.building_id != current_user.building_id):
+            raise HTTPException(status_code=403, detail="Access denied: You don't have permission to view this request")
+        
         return request
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/service-request/status/{request_id}", response_model=schemas.ServiceRequestStatusResponse, description="returns request status for the request id")
-def get_request_status(request_id: int, db: Session = Depends(database.get_db)):
-    request = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
-    if not request:
-        raise HTTPException(status_code=404, detail="Request not found")
-    return {"request_status": request.request_status}
+def get_request_status(
+    request_id: int, 
+    db: Session = Depends(database.get_db),
+    current_user: models.UserModel = Depends(get_current_user_dependency)
+):
+    try:
+        request = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
+        if not request:
+            raise HTTPException(status_code=404, detail="Request not found")
+        
+        # Check if user has access: owner, admin, or same building
+        if (request.user_id != current_user.id and 
+            current_user.role != UserRole.admin and 
+            request.building_id != current_user.building_id):
+            raise HTTPException(status_code=403, detail="Access denied: You don't have permission to view this request")
+        
+        return {"request_status": request.request_status}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/service-request/{request_id}", response_model=None, description="deletes the request for the request id")
-def delete_request(request_id: int, db: Session = Depends(database.get_db)):
-    request = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
-    if not request:
-        raise HTTPException(status_code=404, detail="Request not found")
-    db.delete(request)
-    db.commit()
-    return request
+def delete_request(
+    request_id: int, 
+    db: Session = Depends(database.get_db),
+    current_user: models.UserModel = Depends(get_current_user_dependency)
+):
+    try:
+        request = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.request_id == request_id).first()
+        if not request:
+            raise HTTPException(status_code=404, detail="Request not found")
+        
+        # Only owner or admin can delete
+        if request.user_id != current_user.id and current_user.role != UserRole.admin:
+            raise HTTPException(status_code=403, detail="Access denied: Only the request owner or admin can delete requests")
+        
+        db.delete(request)
+        db.commit()
+        return {"message": "Request deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/service-request/all/{building_id}", response_model=schemas.ServiceRequestAllResponse, description="returns a list requests for the given building id") # add filtering for status, user, building, etc.
-def get_all_requests(building_id: int, db: Session = Depends(database.get_db)):
-    requests = db.query(models.ServiceRequestModel).filter(models.ServiceRequestModel.building_id == building_id).all()
-    return {"requests": requests}
+@router.get("/service-request/all/{building_id}", response_model=schemas.ServiceRequestAllResponse, description="returns a list requests for the given building id")
+def get_all_requests(
+    building_id: int, 
+    db: Session = Depends(database.get_db),
+    current_user: models.UserModel = Depends(get_current_user_dependency)
+):
+    try:
+        # Admin can see all requests, regular users can only see requests from their building
+        if current_user.role == UserRole.admin:
+            requests = db.query(models.ServiceRequestModel).filter(
+                models.ServiceRequestModel.building_id == building_id
+            ).all()
+        else:
+            # Regular users only see requests from their building
+            if building_id != current_user.building_id:
+                raise HTTPException(status_code=403, detail="Access denied: You can only view requests from your building")
+            requests = db.query(models.ServiceRequestModel).filter(
+                models.ServiceRequestModel.building_id == building_id
+            ).all()
+        
+        return {"requests": requests}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.patch("/service-request/{request_id}", response_model=schemas.ServiceRequest, description="Updates a service request (partial update)")
@@ -89,22 +160,32 @@ def patch_service_request(
     request_id: int,
     request_data: schemas.ServiceRequestPatch,
     db: Session = Depends(database.get_db),
+    current_user: models.UserModel = Depends(get_current_user_dependency)
 ):
-    # Fetch the existing service request
-    db_request = db.query(models.ServiceRequestModel).filter(
-        models.ServiceRequestModel.request_id == request_id
-    ).first()
-    if not db_request:
-        raise HTTPException(status_code=404, detail="Service request not found")
+    try:
+        # Fetch the existing service request
+        db_request = db.query(models.ServiceRequestModel).filter(
+            models.ServiceRequestModel.request_id == request_id
+        ).first()
+        if not db_request:
+            raise HTTPException(status_code=404, detail="Service request not found")
 
-    # Update only the fields provided in the request_data
-    update_data = request_data.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_request, key, value)  # Dynamically update attributes
+        # Only owner or admin can update
+        if db_request.user_id != current_user.id and current_user.role != UserRole.admin:
+            raise HTTPException(status_code=403, detail="Access denied: Only the request owner or admin can update requests")
 
-    db.commit()
-    db.refresh(db_request)  # Refresh the instance with the updated database data
-    print(f"Updated request: {db_request}")
+        # Update only the fields provided in the request_data
+        update_data = request_data.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_request, key, value)  # Dynamically update attributes
+
+        db.commit()
+        db.refresh(db_request)  # Refresh the instance with the updated database data
+        print(f"Updated request: {db_request}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     # Return the full ServiceRequest with all fields
     new_request = schemas.ServiceRequest(
         request_id=db_request.request_id,

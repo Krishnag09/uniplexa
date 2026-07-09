@@ -120,7 +120,6 @@ const SignupScreen = () => {
                         }}
                         error={emailError}
                         keyboardType="email-address"
-                        autoCapitalize="none"
                         style={styles.input}
                     />
 

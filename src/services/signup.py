@@ -17,7 +17,7 @@ from common.constants import (
 )
 from config.config import config
 from models import models
-from models.enums import UserRole
+from models.enums import UserRole, UserStatus
 
 # bcrypt has a 72-byte limit on passwords
 BCRYPT_MAX_PASSWORD_LENGTH = 72
@@ -108,12 +108,19 @@ def create_user(db: Session, email: str, password: str, role=None, building_id=N
         raise HTTPException(status_code=400, detail=f"Unable to create user: {str(e)}") from e
 
 def authenticate_user(db, email: str, password: str):
+    # Normalize email (same as in create_user)
+    email_norm = email.strip().lower()
+    
     # Query the user from the database
-    user = db.query(models.UserModel).filter(models.UserModel.email == email).first()
+    user = db.query(models.UserModel).filter(models.UserModel.email == email_norm).first()
 
     # Check if the user exists
     if not user:
         raise exceptions.UserNotFoundException
+
+    # Check if user has a password set
+    if not user.password:
+        raise HTTPException(status_code=400, detail="Password not set for this user. Please set your password first.")
 
     # Verify the password (using verify_password to ensure consistent truncation)
     if not verify_password(password, user.password):
@@ -169,10 +176,18 @@ def add_user(db: Session, email: str, user_role: UserRole.renter = UserRole.rent
         raise exceptions.EmailAlreadyRegisteredException
     new_user_time_delta = timedelta(minutes=NEW_USER_TOKEN_EXPIRE_MINUTES)
     new_user_token = create_access_token(data, new_user_time_delta)
-    first_time_user_email_link_token = SIGN_UP_LINK + f"?token={new_user_token}"
+    if user.status == UserStatus.pending:
+        raise exceptions.UserAlreadyRegisteredException
+    else:        
+        first_time_user_email_link_token = SIGN_UP_LINK + user.status.value + f"?token={new_user_token}"
     print(f"First time user email link token: {first_time_user_email_link_token}")
 
     return first_time_user_email_link_token
+
+def generate_one_time_email_link_token(user: models.UserModel):
+    new_user_time_delta = timedelta(minutes=NEW_USER_TOKEN_EXPIRE_MINUTES)
+    new_user_token = create_access_token(data, new_user_time_delta)
+    return SIGN_UP_LINK + user.status.value + f"?token={new_user_token}"
 
 def change_password_first_time(db: Session, user_id: int, new_password: str):
     user = db.query(models.UserModel).filter(models.UserModel.id == user_id).first()
