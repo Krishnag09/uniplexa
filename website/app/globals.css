@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-padding-top: 88px;
+}
+
+body {
+  min-height: 100vh;
+  /* Tabular numerals everywhere: figures must line up like a meter reading. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* All numeric figures render as aligned tabular numerals. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* A faint ledger grid, printed on the paper background. */
+.ledger {
+  background-image:
+    linear-gradient(to right, rgba(23, 24, 28, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(23, 24, 28, 0.035) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+/* A filing-stamp label: uppercase, tracked out, boxed. */
+.stamp-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.7rem;
+}
+
+/* Perforated / receipt edge used to separate the "torn off" result card. */
+.perf-top {
+  background-image: radial-gradient(
+    circle at 6px 0,
+    transparent 0,
+    transparent 5px,
+    #f2f1ea 5px
+  );
+  background-size: 12px 12px;
+  background-repeat: repeat-x;
+  height: 6px;
+}
+
+::selection {
+  background: rgba(216, 53, 27, 0.16);
+}
+
+/* Focus is always visible and always the stamp color — keyboard-first. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #d8351b;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Honor reduced-motion: the one animated moment (the number reveal) stops. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
