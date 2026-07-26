@@ -1,0 +1,18 @@
+# Uniplexa static site — Apache/LiteSpeed config for Hostinger shared hosting.
+# This file is copied verbatim into the exported site (out/.htaccess).
+
+# The LL97 OG image is exported as an extensionless file (/opengraph-image),
+# so force its content type or social/link previews won't render it.
+<Files "opengraph-image">
+  ForceType image/png
+</Files>
+
+# Cache the immutable, content-hashed build assets aggressively.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|woff2?|png|jpg|svg|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# Send a clean 404 (the export already produces 404.html).
+ErrorDocument 404 /404.html
